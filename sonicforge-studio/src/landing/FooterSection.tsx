@@ -45,7 +45,7 @@ export function FooterSection({
     }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(clean)) {
       setStatus('error')
-      setFeedback('Format email tidak valid. Contoh: kreator@domain.com')
+      setFeedback('Format email tidak valid (mis. kreator@domain.com).')
       return
     }
 

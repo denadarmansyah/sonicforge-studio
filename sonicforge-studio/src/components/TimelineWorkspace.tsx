@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Copy, SlidersHorizontal, Trash2, ZoomIn, ZoomOut } from 'lucide-react'
+import { Copy, Mic, SlidersHorizontal, Square, Trash2, Upload, ZoomIn, ZoomOut } from 'lucide-react'
 import { duration, Track } from '../types/audio'
 import { STUDIO_THEME } from '../theme/studioTheme'
 import { WaveformTrack } from './WaveformTrack'
@@ -10,8 +10,10 @@ const ROW = 92
 
 interface Props {
   tracks: Track[]; sel: string | null; pos: number; pps: number; endT: number
+  rec: boolean; busy: boolean
   onSel: (id: string) => void; onSeek: (s: number) => void; onZoom: (pps: number) => void
-  onPatch: (id: string, p: Partial<Track>) => void; onDup: (id: string) => void; onDel: (id: string) => void; onDemo: () => void
+  onPatch: (id: string, p: Partial<Track>) => void; onDup: (id: string) => void; onDel: (id: string) => void
+  onOpenImport: () => void; onToggleRec: () => void
   onEditEffects?: () => void
 }
 
@@ -39,7 +41,10 @@ function Clip({ t, pps, selected, onPatch }: { t: Track; pps: number; selected: 
   )
 }
 
-export function TimelineWorkspace({ tracks, sel, pos, pps, endT, onSel, onSeek, onZoom, onPatch, onDup, onDel, onDemo, onEditEffects }: Props) {
+export function TimelineWorkspace({
+  tracks, sel, pos, pps, endT, rec, busy,
+  onSel, onSeek, onZoom, onPatch, onDup, onDel, onOpenImport, onToggleRec, onEditEffects,
+}: Props) {
   const [compact, setCompact] = useState(() => (typeof window !== 'undefined' ? window.innerWidth < 1024 : false))
   const pinchRef = useRef<null | { dist: number; pps: number }>(null)
 
@@ -61,7 +66,6 @@ export function TimelineWorkspace({ tracks, sel, pos, pps, endT, onSel, onSeek, 
     onSeek(Math.max(0, (e.clientX - r.left) / pps))
   }
 
-  // Two-finger pinch-to-zoom on touch screens
   const onTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
     if (e.touches.length === 2) {
       const dx = e.touches[0].clientX - e.touches[1].clientX
@@ -98,13 +102,12 @@ export function TimelineWorkspace({ tracks, sel, pos, pps, endT, onSel, onSeek, 
           )}
         </div>
         <div className="flex shrink-0 items-center gap-1.5">
-          <button className="btn sq" onClick={() => onZoom(Math.max(10, pps / 1.5))} aria-label="Zoom out"><ZoomOut size={13} /></button>
+          <button className="btn sq" onClick={() => onZoom(Math.max(10, pps / 1.5))} aria-label="Perkecil tampilan"><ZoomOut size={13} /></button>
           <span className="w-14 text-center font-mono tabular-nums text-sub">{Math.round(pps)} px/s</span>
-          <button className="btn sq" onClick={() => onZoom(Math.min(400, pps * 1.5))} aria-label="Zoom in"><ZoomIn size={13} /></button>
+          <button className="btn sq" onClick={() => onZoom(Math.min(400, pps * 1.5))} aria-label="Perbesar tampilan"><ZoomIn size={13} /></button>
         </div>
       </div>
 
-      {/* Horizontal scroll strictly isolated inside timeline viewport */}
       <div
         className="relative min-h-0 min-w-0 flex-1 overflow-auto"
         onTouchStart={onTouchStart}
@@ -144,21 +147,21 @@ export function TimelineWorkspace({ tracks, sel, pos, pps, endT, onSel, onSeek, 
                       className="inp h-6 min-h-[28px] w-full truncate px-1.5 text-[11px]"
                       value={t.name}
                       onChange={(e) => onPatch(t.id, { name: e.target.value })}
-                      aria-label="Track name"
+                      aria-label="Nama track"
                     />
                     <div className="grid grid-cols-4 gap-1">
                       <button className={`btn sq !h-9 !min-h-9 !w-full ${t.mute ? 'on' : ''}`} onClick={() => onPatch(t.id, { mute: !t.mute })} aria-label="Mute">M</button>
                       <button className={`btn sq !h-9 !min-h-9 !w-full ${t.solo ? 'on' : ''}`} onClick={() => onPatch(t.id, { solo: !t.solo })} aria-label="Solo">S</button>
-                      <button className="btn sq !h-9 !min-h-9 !w-full" onClick={() => onDup(t.id)} aria-label="Duplicate track"><Copy size={12} /></button>
-                      <button className="btn sq !h-9 !min-h-9 !w-full" onClick={() => onDel(t.id)} aria-label="Delete track"><Trash2 size={12} /></button>
+                      <button className="btn sq !h-9 !min-h-9 !w-full" onClick={() => onDup(t.id)} aria-label="Duplikat track"><Copy size={12} /></button>
+                      <button className="btn sq !h-9 !min-h-9 !w-full" onClick={() => onDel(t.id)} aria-label="Hapus track"><Trash2 size={12} /></button>
                     </div>
                   </>
                 ) : (
                   <>
                     <div className="flex items-center gap-1">
-                      <input className="inp h-6 min-w-0 flex-1 px-1.5" value={t.name} onChange={(e) => onPatch(t.id, { name: e.target.value })} aria-label="Track name" />
-                      <button className="btn sq" onClick={() => onDup(t.id)} aria-label="Duplicate track"><Copy size={12} /></button>
-                      <button className="btn sq" onClick={() => onDel(t.id)} aria-label="Delete track"><Trash2 size={12} /></button>
+                      <input className="inp h-6 min-w-0 flex-1 px-1.5" value={t.name} onChange={(e) => onPatch(t.id, { name: e.target.value })} aria-label="Nama track" />
+                      <button className="btn sq" onClick={() => onDup(t.id)} aria-label="Duplikat track"><Copy size={12} /></button>
+                      <button className="btn sq" onClick={() => onDel(t.id)} aria-label="Hapus track"><Trash2 size={12} /></button>
                     </div>
                     <div className="flex items-center gap-1.5">
                       <button className={`btn sq ${t.mute ? 'on' : ''}`} onClick={() => onPatch(t.id, { mute: !t.mute })} aria-label="Mute">M</button>
@@ -176,10 +179,22 @@ export function TimelineWorkspace({ tracks, sel, pos, pps, endT, onSel, onSeek, 
             </div>
           ))}
 
+          {/* Neutral Real-Action Empty State */}
           {tracks.length === 0 && (
             <div className="sticky left-0 flex w-[min(460px,calc(100vw-24px))] flex-col items-start gap-3 p-4 sm:p-6">
-              <p className="text-sub">No tracks yet. Import audio, record from the microphone, or start from the built-in demo voice.</p>
-              <button className="btn pri" onClick={onDemo}>Load demo voice</button>
+              <p className="m-0 leading-relaxed text-sub">
+                Belum ada track. Impor audio atau video, atau rekam dari mikrofon.
+              </p>
+              <div className="flex flex-wrap items-center gap-2">
+                <button className="btn pri" onClick={onOpenImport} disabled={busy}>
+                  <Upload size={13} />
+                  <span>Impor file</span>
+                </button>
+                <button className={`btn ${rec ? 'on' : ''}`} onClick={onToggleRec}>
+                  {rec ? <Square size={12} /> : <Mic size={13} />}
+                  <span>{rec ? 'Berhenti rekam' : 'Rekam'}</span>
+                </button>
+              </div>
             </div>
           )}
 

@@ -70,27 +70,3 @@ export const SOUNDS: LibItem[] = [
   L('bell', SOUND_CATS[4], 'Studio Bell', { f0: 523, f1: 523, partials: [1, 2.4, 3.9, 5.9], dur: 3, d: 2.8, r: 0.2 }),
   L('chord', SOUND_CATS[4], 'Minimal Chord', { wave: 'triangle', f0: 220, f1: 220, partials: [1, 1.26, 1.5, 2], dur: 3, a: 0.1, d: 1, s: 0.5, r: 1 }),
 ]
-
-// Formant-style synthetic speech-like sample (glottal saw through three resonators).
-export function demoVoice(sr: number): AudioBuffer {
-  const V = [[730, 1090], [270, 2290], [300, 870], [530, 1840], [660, 1720], [400, 1000]]
-  const n = Math.floor(4.2 * sr), o = new Float32Array(n), y = [[0, 0], [0, 0], [0, 0]]
-  let ph = 0, pk = 1e-9
-  for (let i = 0; i < n; i++) {
-    const t = i / sr, syl = Math.floor(t / 0.7), l = (t % 0.7) / 0.7
-    const env = l < 0.08 ? l / 0.08 : l < 0.8 ? 1 : Math.max(0, 1 - (l - 0.8) / 0.1)
-    ph += (112 + 14 * Math.sin(syl * 1.7) - 10 * l + 3 * Math.sin(2 * Math.PI * 5.5 * t)) / sr
-    const x = 2 * (ph % 1) - 1 + (Math.random() * 2 - 1) * 0.05, vw = V[syl % V.length]
-    let s = 0
-    ;[vw[0], vw[1], 2800].forEach((f, j) => {
-      const r = Math.exp((-Math.PI * (60 + j * 40)) / sr)
-      const v = (1 - r) * x + 2 * r * Math.cos((2 * Math.PI * f) / sr) * y[j][0] - r * r * y[j][1]
-      y[j][1] = y[j][0]; y[j][0] = v; s += v * (j === 2 ? 0.4 : 1)
-    })
-    o[i] = s * env; pk = Math.max(pk, Math.abs(o[i]))
-  }
-  for (let i = 0; i < n; i++) o[i] *= 0.8 / pk
-  const b = new AudioBuffer({ numberOfChannels: 2, length: n, sampleRate: sr })
-  b.copyToChannel(o, 0); b.copyToChannel(o, 1)
-  return b
-}

@@ -1,7 +1,8 @@
 import { ReactNode, useMemo, useState } from 'react'
-import { ChevronDown } from 'lucide-react'
+import { ChevronDown, Download, Loader2 } from 'lucide-react'
 import { EqVisualizer } from './EqVisualizer'
 import { FX, Preset, Track } from '../types/audio'
+import { EXPORT_FORMAT_OPTIONS, ExportFormat } from '../utils/audioExporter'
 
 export function Param({ label, v, min, max, step = 1, unit = '', dp = 0, on }: { label: string; v: number; min: number; max: number; step?: number; unit?: string; dp?: number; on: (n: number) => void }) {
   return (
@@ -17,7 +18,6 @@ function Section({ title, defaultOpen = true, children }: { title: string; defau
   const [open, setOpen] = useState(defaultOpen)
   return (
     <section className="border-b border-line px-3 py-2.5 xl:py-3">
-      {/* At >=1280px (xl) renders identically to original static header; <1280px behaves as touch-friendly accordion */}
       <div className="hidden xl:block">
         <h3 className="mb-2 text-[11px] font-semibold text-sub">{title}</h3>
         {children}
@@ -42,6 +42,10 @@ interface Props {
   track?: Track
   tracks?: Track[]
   presets: Preset[]
+  exportFormat: ExportFormat
+  setExportFormat: (f: ExportFormat) => void
+  busy?: boolean
+  onExportTrack: (t: Track, fmt: ExportFormat) => void
   onSel?: (id: string) => void
   onPatchTrack?: (id: string, p: Partial<Track>) => void
   onFx: (p: Partial<FX>) => void
@@ -51,17 +55,20 @@ interface Props {
 
 const EQ_LABELS = ['Sub 60 Hz', 'Body 180 Hz', 'Low-Mid 500 Hz', 'Presence 3.2 kHz', 'Air 10 kHz']
 
-export function InspectorPanel({ track, tracks = [], presets, onSel, onPatchTrack, onFx, onReset, onApply }: Props) {
+export function InspectorPanel({
+  track, tracks = [], presets, exportFormat, setExportFormat, busy = false,
+  onExportTrack, onSel, onPatchTrack, onFx, onReset, onApply,
+}: Props) {
   const fx = track?.fx
   const eqKey = useMemo(() => (fx ? fx.eq.join(',') : ''), [fx])
 
   if (!track || !fx) {
     return (
       <aside className="flex h-full min-h-0 flex-col gap-3 bg-panel p-4 text-sub lg:border-l lg:border-line">
-        <p className="m-0">Select a track to edit its effects chain.</p>
+        <p className="m-0">Pilih track untuk mengatur efek atau mengekspor audionya.</p>
         {tracks.length > 0 && onSel && (
           <div className="space-y-1.5 lg:hidden">
-            <span className="block text-[11px] font-semibold text-ink">Choose a track:</span>
+            <span className="block text-[11px] font-semibold text-ink">Pilih track:</span>
             {tracks.map((t) => (
               <button key={t.id} type="button" className="btn w-full justify-start" onClick={() => onSel(t.id)}>
                 {t.name}
@@ -79,7 +86,7 @@ export function InspectorPanel({ track, tracks = [], presets, onSel, onPatchTrac
       <div className="flex items-center gap-2 border-b border-line px-3 py-2">
         {tracks.length > 1 && onSel ? (
           <select
-            aria-label="Selected track"
+            aria-label="Track terpilih"
             value={track.id}
             onChange={(e) => onSel(e.target.value)}
             className="inp min-w-0 flex-1 font-semibold lg:hidden"
@@ -91,6 +98,31 @@ export function InspectorPanel({ track, tracks = [], presets, onSel, onPatchTrac
         <button className={`btn ${fx.bypass ? 'on' : ''}`} onClick={() => onFx({ bypass: !fx.bypass })}>Bypass FX</button>
         <button className="btn" onClick={onReset}>Reset</button>
       </div>
+
+      {/* Single-Track Export Bar (WAV / MP3 with track FX applied) */}
+      <div className="flex items-center gap-1.5 border-b border-line bg-base/50 px-3 py-2">
+        <select
+          className="inp min-w-0 font-mono text-[11px]"
+          value={exportFormat}
+          onChange={(e) => setExportFormat(e.target.value as ExportFormat)}
+          disabled={busy}
+          aria-label="Format ekspor track"
+        >
+          {EXPORT_FORMAT_OPTIONS.map((opt) => (
+            <option key={opt.value} value={opt.value}>{opt.label}</option>
+          ))}
+        </select>
+        <button
+          type="button"
+          className="btn flex-1 justify-center"
+          disabled={busy}
+          onClick={() => onExportTrack(track, exportFormat)}
+        >
+          {busy ? <Loader2 size={12} className="animate-spin" /> : <Download size={12} />}
+          <span>Ekspor track ini</span>
+        </button>
+      </div>
+
       <div className="min-h-0 flex-1 overflow-y-auto">
         <Section title="Preset">
           <select className="inp w-full" value="" onChange={(e) => { const p = presets.find((x) => x.id === e.target.value); if (p) onApply(p) }}>
@@ -99,7 +131,6 @@ export function InspectorPanel({ track, tracks = [], presets, onSel, onPatchTrac
           </select>
         </Section>
 
-        {/* Fade In / Out controls accessible in Inspector on <1024px where compact timeline track header hides them */}
         {onPatchTrack && (
           <div className="border-b border-line px-3 py-2.5 lg:hidden">
             <h3 className="mb-2 text-[11.5px] font-semibold text-sub">Clip envelope</h3>
