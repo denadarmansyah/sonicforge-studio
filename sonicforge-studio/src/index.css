@@ -1,20 +1,162 @@
 @import "tailwindcss";
+
 @theme {
-  --color-base: #09090B; --color-panel: #111114; --color-raised: #18181C; --color-line: #27272A;
-  --color-ink: #FAFAFA; --color-sub: #A1A1AA; --color-mute: #71717A;
-  --color-accent: #F97316; --color-sig: #10B981; --color-clip: #EF4444;
-  --font-sans: 'Inter', system-ui, sans-serif; --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+  /* Studio Monochrome Tokens */
+  --color-base: #09090B;
+  --color-panel: #111114;
+  --color-raised: #18181C;
+  --color-line: #27272A;
+  --color-ink: #FAFAFA;
+  --color-sub: #A1A1AA;
+  --color-mute: #71717A;
+  --color-accent: #FAFAFA;
+  --color-sig: #D4D4D8;
+  --color-clip: #FFFFFF;
+
+  /* Luven Landing Page Tokens */
+  --color-luven-black: #0F0F10;
+  --color-luven-white: #FFFFFF;
+  --color-luven-gray: #F4F4F5;
+  --color-luven-border: #E4E4E7;
+  --color-luven-maroon: #5B1A2B;
+  --color-luven-maroon-hover: #702237;
+
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
 }
-html, body, #root { height: 100%; }
-body { margin: 0; background: var(--color-base); color: var(--color-ink); font-family: var(--font-sans); overflow: hidden; font-size: 12px; }
-input[type=range] { accent-color: #F97316; height: 14px; width: 100%; margin: 0; }
-::-webkit-scrollbar { width: 8px; height: 8px; } ::-webkit-scrollbar-thumb { background: #27272A; } ::-webkit-scrollbar-corner { background: transparent; }
-.btn { display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 10px; border: 1px solid var(--color-line); background: var(--color-raised); color: var(--color-ink); font-size: 12px; border-radius: 4px; transition: all .15s ease-out; cursor: pointer; white-space: nowrap; }
-.btn:hover { background: #202026; } .btn:active { transform: translateY(1px); }
-.btn:focus-visible { outline: 1px solid var(--color-accent); outline-offset: 1px; }
-.btn:disabled { opacity: .4; pointer-events: none; }
-.btn.on { border-color: var(--color-accent); color: var(--color-accent); }
-.btn.pri { background: var(--color-accent); border-color: var(--color-accent); color: #09090B; font-weight: 600; } .btn.pri:hover { background: #FB8A3C; }
-.btn.sq { width: 24px; height: 24px; padding: 0; justify-content: center; font-family: var(--font-mono); font-size: 11px; }
-.inp { height: 28px; background: var(--color-base); border: 1px solid var(--color-line); border-radius: 4px; color: var(--color-ink); font-size: 12px; padding: 0 8px; outline: none; transition: border-color .15s ease-out; }
-.inp:focus-visible { border-color: var(--color-accent); }
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html {
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  overflow-x: hidden;
+}
+
+/* Studio Editor Scoped Base & Controls (preserves exact layout, spacing & monochrome theme) */
+.studio-shell {
+  background: var(--color-base);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  font-size: 12px;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.studio-shell input[type=range] {
+  accent-color: var(--color-accent);
+  height: 14px;
+  width: 100%;
+  margin: 0;
+}
+
+.studio-shell ::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.studio-shell ::-webkit-scrollbar-thumb {
+  background: var(--color-line);
+}
+
+.studio-shell ::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 10px;
+  border: 1px solid var(--color-line);
+  background: var(--color-raised);
+  color: var(--color-ink);
+  font-size: 12px;
+  border-radius: 4px;
+  transition: all .15s ease-out;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.btn:hover {
+  background: #222226;
+}
+
+.btn:active {
+  transform: translateY(1px);
+}
+
+.btn:focus-visible {
+  outline: 1px solid var(--color-accent);
+  outline-offset: 1px;
+}
+
+.btn:disabled {
+  opacity: .4;
+  pointer-events: none;
+}
+
+.btn.on {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+
+.btn.pri {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  color: var(--color-base);
+  font-weight: 600;
+}
+
+.btn.pri:hover {
+  background: #E4E4E7;
+  border-color: #E4E4E7;
+}
+
+.btn.sq {
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  justify-content: center;
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+
+.inp {
+  height: 28px;
+  background: var(--color-base);
+  border: 1px solid var(--color-line);
+  border-radius: 4px;
+  color: var(--color-ink);
+  font-size: 12px;
+  padding: 0 8px;
+  outline: none;
+  transition: border-color .15s ease-out;
+}
+
+.inp:focus-visible {
+  border-color: var(--color-accent);
+}
+
+/* Landing Page Lenis Smooth Scroll Support */
+html.lenis, html.lenis body {
+  height: auto;
+}
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+.lenis.lenis-smooth [data-lenis-prevent] {
+  overscroll-behavior: contain;
+}
+.lenis.lenis-stopped {
+  overflow: hidden;
+}

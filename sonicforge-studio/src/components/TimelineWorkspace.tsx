@@ -1,5 +1,6 @@
 import { Copy, Trash2, ZoomIn, ZoomOut } from 'lucide-react'
 import { duration, Track } from '../types/audio'
+import { STUDIO_THEME } from '../theme/studioTheme'
 import { WaveformTrack } from './WaveformTrack'
 
 const HEAD = 216, ROW = 92
@@ -17,7 +18,7 @@ function Clip({ t, pps, selected, onPatch }: { t: Track; pps: number; selected: 
       onPointerDown={(e) => { d.current = { x: e.clientX, o: t.offset }; e.currentTarget.setPointerCapture(e.pointerId) }}
       onPointerMove={(e) => { if (e.buttons === 1 && d.current) onPatch(t.id, { offset: Math.max(0, d.current.o + (e.clientX - d.current.x) / pps) }) }}
       onPointerUp={() => { d.current = null }}>
-      <WaveformTrack buffer={t.buffer} width={w} height={ROW - 20} color={t.mute ? '#52525B' : '#10B981'} />
+      <WaveformTrack buffer={t.buffer} width={w} height={ROW - 20} color={t.mute ? STUDIO_THEME.waveformMuted : STUDIO_THEME.waveformActive} />
     </div>
   )
 }

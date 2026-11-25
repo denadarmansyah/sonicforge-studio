@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react'
+import { STUDIO_THEME } from '../theme/studioTheme'
 
 export function LevelMeter({ get, w = 72, label }: { get: () => number; w?: number; label?: string }) {
   const bar = useRef<HTMLDivElement>(null), fn = useRef(get)
@@ -7,7 +8,11 @@ export function LevelMeter({ get, w = 72, label }: { get: () => number; w?: numb
     let id = 0, v = 0
     const f = () => {
       v = Math.max(fn.current(), v * 0.92)
-      if (bar.current) { bar.current.style.width = Math.min(1, v) * 100 + '%'; bar.current.style.background = v > 0.98 ? '#EF4444' : '#10B981' }
+      if (bar.current) {
+        const clipped = v > 0.98
+        bar.current.style.width = Math.min(1, v) * 100 + '%'
+        bar.current.style.background = clipped ? STUDIO_THEME.meterClip : STUDIO_THEME.meterNormal
+      }
       id = requestAnimationFrame(f)
     }
     f(); return () => cancelAnimationFrame(id)

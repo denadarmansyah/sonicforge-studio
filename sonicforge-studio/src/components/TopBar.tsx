@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { AudioWaveform, Download, Mic, Pause, Play, Repeat, SkipBack, SlidersHorizontal, Square } from 'lucide-react'
 import { engine, peak } from '../audio/audioEngine'
 import { fmt } from '../utils/format'
@@ -38,7 +39,7 @@ export function TopBar(p: Props) {
   return (
     <header className="flex items-center justify-between gap-4 border-b border-line bg-panel px-3">
       <div className="flex min-w-0 items-center gap-3">
-        <div className="flex items-center gap-2"><AudioWaveform size={16} className="text-accent" /><span className="text-[12px] font-semibold tracking-[0.08em]">SONICFORGE</span></div>
+        <Link to="/" className="flex items-center gap-2 text-ink no-underline focus-visible:outline-1 focus-visible:outline-accent" title="Back to Luven Home"><AudioWaveform size={16} className="text-accent" /><span className="text-[12px] font-semibold tracking-[0.08em]">LUVEN</span></Link>
         <input className="inp w-48" value={p.name} onChange={(e) => p.setName(e.target.value)} aria-label="Project name" />
       </div>
       <div className="flex items-center gap-1.5">
