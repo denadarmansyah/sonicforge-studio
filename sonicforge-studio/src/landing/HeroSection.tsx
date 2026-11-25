@@ -1,8 +1,9 @@
 import { useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { motion, useMotionValue, useReducedMotion, useSpring } from 'framer-motion'
+import { motion, useMotionValue, useSpring } from 'framer-motion'
 import { ChevronRight, Play } from 'lucide-react'
 import { LuvenWaveformMark, MusicBeamedNote, MusicEighthNote, SparkleStar } from './LuvenIcons'
+import { useMotionEnvironment } from './useMotionConfig'
 
 const EASE_OUT: [number, number, number, number] = [0.22, 1, 0.36, 1]
 
@@ -18,28 +19,28 @@ const H1_LINE_2 = [
 ]
 
 export function HeroSection({ onLearnMore }: { onLearnMore: () => void }) {
-  const reduce = useReducedMotion()
+  const { prefersReduced, isCompactMobile, animateLoops, enableDesktopEffects } = useMotionEnvironment()
   const navigate = useNavigate()
   const [ctaHover, setCtaHover] = useState(false)
   const [rippleKey, setRippleKey] = useState(0)
 
-  // Subtle magnetic button motion values (GPU transform only)
+  // Subtle magnetic button motion values (desktop pointer only)
   const magRef = useRef<HTMLButtonElement>(null)
   const magX = useMotionValue(0)
   const magY = useMotionValue(0)
   const smoothMagX = useSpring(magX, { stiffness: 260, damping: 20 })
   const smoothMagY = useSpring(magY, { stiffness: 260, damping: 20 })
 
-  // Subtle mouse parallax for hero illustration (max 12px)
+  // Subtle mouse parallax for hero illustration (max 12px, desktop pointer only)
   const parX = useMotionValue(0)
   const parY = useMotionValue(0)
   const smoothParX = useSpring(parX, { stiffness: 90, damping: 22 })
   const smoothParY = useSpring(parY, { stiffness: 90, damping: 22 })
 
   const handleHeroMouseMove = (e: React.MouseEvent<HTMLElement>) => {
-    if (reduce) return
+    if (!enableDesktopEffects) return
     const rect = e.currentTarget.getBoundingClientRect()
-    const nx = ((e.clientX - rect.left) / rect.width - 0.5) * 2 // -1..1
+    const nx = ((e.clientX - rect.left) / rect.width - 0.5) * 2
     const ny = ((e.clientY - rect.top) / rect.height - 0.5) * 2
     parX.set(nx * 10)
     parY.set(ny * 8)
@@ -51,7 +52,7 @@ export function HeroSection({ onLearnMore }: { onLearnMore: () => void }) {
   }
 
   const handleMagMove = (e: React.MouseEvent<HTMLButtonElement>) => {
-    if (reduce || !magRef.current) return
+    if (!enableDesktopEffects || !magRef.current) return
     const r = magRef.current.getBoundingClientRect()
     const dx = e.clientX - (r.left + r.width / 2)
     const dy = e.clientY - (r.top + r.height / 2)
@@ -65,35 +66,37 @@ export function HeroSection({ onLearnMore }: { onLearnMore: () => void }) {
     magY.set(0)
   }
 
+  const displayedEqBars = isCompactMobile ? EQ_HEIGHTS.slice(6, 18) : EQ_HEIGHTS
+
   return (
     <section
       id="top"
       onMouseMove={handleHeroMouseMove}
       onMouseLeave={handleHeroMouseLeave}
-      className="relative -mt-20 overflow-hidden pt-20"
+      className="relative -mt-18 overflow-hidden pt-18 md:-mt-20 md:pt-20"
     >
-      {/* Top-Right Organic Black Blob (extends behind desktop navbar auth buttons just like reference) */}
+      {/* Top-Right Organic Black Blob on Desktop */}
       <motion.div
         aria-hidden="true"
-        initial={reduce ? false : { opacity: 0, scale: 0.78, x: 60, y: -40 }}
+        initial={prefersReduced ? false : { opacity: 0, scale: 0.78, x: 60, y: -40 }}
         animate={{ opacity: 1, scale: 1, x: 0, y: 0 }}
         transition={{ duration: 0.95, ease: EASE_OUT }}
         style={{ originX: 1, originY: 0 }}
-        className="pointer-events-none absolute right-0 top-0 hidden h-[410px] w-[350px] lg:block xl:h-[430px] xl:w-[calc(50vw-230px)] xl:min-w-[430px]"
+        className="pointer-events-none absolute right-0 top-0 hidden h-[410px] w-[350px] lg:block xl:h-[430px] xl:w-[calc(50%-230px)] xl:min-w-[430px]"
       >
         <svg viewBox="0 0 450 440" fill="none" className="h-full w-full" preserveAspectRatio="none">
           <motion.path
             fill="#0F0F10"
             animate={
-              reduce
-                ? undefined
-                : {
+              animateLoops && enableDesktopEffects
+                ? {
                     d: [
                       'M78 0H450V316C412 368 338 408 246 404C112 398 18 292 22 158C24 92 46 38 78 0Z',
                       'M68 0H450V326C404 378 326 414 236 408C104 398 12 284 18 150C21 86 42 36 68 0Z',
                       'M78 0H450V316C412 368 338 408 246 404C112 398 18 292 22 158C24 92 46 38 78 0Z',
                     ],
                   }
+                : undefined
             }
             transition={{ duration: 9, repeat: Infinity, ease: 'easeInOut' }}
             d="M78 0H450V316C412 368 338 408 246 404C112 398 18 292 22 158C24 92 46 38 78 0Z"
@@ -101,23 +104,23 @@ export function HeroSection({ onLearnMore }: { onLearnMore: () => void }) {
         </svg>
       </motion.div>
 
-      <div className="relative mx-auto max-w-[1280px] px-6 pt-6 pb-2 lg:px-8 lg:pt-8">
-        <div className="grid grid-cols-1 items-end gap-10 lg:grid-cols-[540px_1fr] xl:grid-cols-[570px_1fr] lg:gap-4">
-          {/* LEFT HERO COPY */}
-          <div className="relative z-20 pb-4 lg:pb-12">
-            {/* Pill Badge + Entrance Sound Ripple */}
+      <div className="relative mx-auto max-w-[1280px] px-4 pt-4 pb-2 md:px-6 md:pt-6 lg:px-8 lg:pt-8">
+        <div className="grid grid-cols-1 items-end gap-8 lg:grid-cols-[minmax(0,540px)_1fr] xl:grid-cols-[minmax(0,570px)_1fr] lg:gap-4">
+          {/* LEFT / TOP HERO COPY */}
+          <div className="relative z-20 pb-2 lg:pb-12">
+            {/* Pill Badge + Sound Ripple */}
             <motion.div
-              initial={reduce ? false : { opacity: 0, y: 12 }}
+              initial={prefersReduced ? false : { opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.08, ease: EASE_OUT }}
               className="relative inline-flex items-center"
             >
               <span className="inline-flex items-center gap-2.5 rounded-full border border-[#E4E4E7] bg-white px-4 py-1.5 text-[13px] font-medium text-[#0F0F10] shadow-[0_1px_2px_rgba(0,0,0,0.03)]">
                 <span className="relative flex h-2.5 w-2.5 items-center justify-center">
-                  {!reduce && (
+                  {animateLoops && (
                     <motion.span
                       className="absolute inset-0 rounded-full border border-[#5B1A2B]"
-                      animate={{ scale: [1, 2.3], opacity: [0.65, 0] }}
+                      animate={{ scale: [1, 2.25], opacity: [0.65, 0] }}
                       transition={{ duration: 2.2, repeat: Infinity, ease: 'easeOut' }}
                     />
                   )}
@@ -127,14 +130,14 @@ export function HeroSection({ onLearnMore }: { onLearnMore: () => void }) {
               </span>
             </motion.div>
 
-            {/* H1 Word-by-Word Mask Reveal */}
-            <h1 className="mt-6 text-[42px] font-extrabold leading-[1.05] tracking-[-0.03em] text-[#0F0F10] sm:text-[54px] xl:text-[62px]">
+            {/* Fluid H1 Word-by-Word Mask Reveal */}
+            <h1 className="mt-5 text-[clamp(2.25rem,4.2vw+0.85rem,3.875rem)] font-extrabold leading-[1.06] tracking-[-0.03em] text-balance text-[#0F0F10] md:mt-6">
               <span className="block">
                 {H1_LINE_1.map((word, idx) => (
-                  <span key={word} className="mr-[0.24em] inline-block overflow-hidden pb-1 align-bottom last:mr-0">
+                  <span key={word} className="mr-[0.23em] inline-block overflow-hidden pb-1 align-bottom last:mr-0">
                     <motion.span
                       className="inline-block"
-                      initial={reduce ? false : { y: '110%', opacity: 0 }}
+                      initial={prefersReduced ? false : { y: '110%', opacity: 0 }}
                       animate={{ y: '0%', opacity: 1 }}
                       transition={{
                         duration: 0.68,
@@ -151,13 +154,13 @@ export function HeroSection({ onLearnMore }: { onLearnMore: () => void }) {
                 {H1_LINE_2.map((item, idx) => (
                   <span
                     key={item.text}
-                    className={`mr-[0.24em] inline-block overflow-hidden pb-1.5 align-bottom last:mr-0 ${
+                    className={`mr-[0.23em] inline-block overflow-hidden pb-1.5 align-bottom last:mr-0 ${
                       item.accent ? 'text-[#5B1A2B]' : 'text-[#0F0F10]'
                     }`}
                   >
                     <motion.span
                       className="inline-block"
-                      initial={reduce ? false : { y: '110%', opacity: 0 }}
+                      initial={prefersReduced ? false : { y: '110%', opacity: 0 }}
                       animate={{ y: '0%', opacity: 1 }}
                       transition={{
                         duration: 0.68,
@@ -172,26 +175,26 @@ export function HeroSection({ onLearnMore }: { onLearnMore: () => void }) {
               </span>
             </h1>
 
-            {/* Subtitle */}
+            {/* Fluid Subtitle (45-75 char measure) */}
             <motion.p
-              initial={reduce ? false : { opacity: 0, y: 16 }}
+              initial={prefersReduced ? false : { opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.68, delay: 0.52, ease: EASE_OUT }}
-              className="mt-5 max-w-[460px] text-[16px] leading-[1.55] font-normal text-[#27272A] sm:text-[18px]"
+              className="mt-4 max-w-[46ch] text-[clamp(1rem,0.9vw+0.78rem,1.25rem)] leading-[1.55] font-normal text-balance text-[#27272A] md:mt-5"
             >
               Platform modern untuk membuat, mengelola, dan menemukan sound terbaik.
             </motion.p>
 
-            {/* CTA Buttons Row */}
+            {/* CTA Buttons Row — Full-width below 480px, side-by-side >=480px */}
             <motion.div
-              initial={reduce ? false : { opacity: 0, y: 16 }}
+              initial={prefersReduced ? false : { opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.68, delay: 0.62, ease: EASE_OUT }}
-              className="mt-8 flex flex-wrap items-center gap-4"
+              className="mt-7 flex flex-col items-stretch gap-3.5 min-[480px]:flex-row min-[480px]:flex-wrap min-[480px]:items-center md:mt-8 md:gap-4"
             >
-              {/* Primary Maroon Button with Magnetic Hover, Sheen & Concentric Sound Ripple */}
-              <div className="relative inline-flex items-center justify-center">
-                {!reduce && ctaHover && (
+              {/* Primary Maroon Button */}
+              <div className="relative inline-flex w-full items-center justify-center min-[480px]:w-auto">
+                {enableDesktopEffects && ctaHover && (
                   <>
                     <motion.span
                       key={`r1-${rippleKey}`}
@@ -215,20 +218,24 @@ export function HeroSection({ onLearnMore }: { onLearnMore: () => void }) {
                 <motion.button
                   ref={magRef}
                   type="button"
-                  style={reduce ? undefined : { x: smoothMagX, y: smoothMagY }}
+                  style={enableDesktopEffects ? { x: smoothMagX, y: smoothMagY } : undefined}
                   onMouseEnter={() => {
+                    if (!enableDesktopEffects) return
                     setCtaHover(true)
                     setRippleKey((k) => k + 1)
                   }}
                   onMouseMove={handleMagMove}
                   onMouseLeave={handleMagLeave}
                   onClick={() => navigate('/studio')}
-                  className="group relative inline-flex h-[50px] cursor-pointer items-center gap-2.5 overflow-hidden rounded-full bg-[#5B1A2B] px-7 text-[14.5px] font-semibold text-white shadow-[0_6px_20px_rgba(91,26,43,0.22)] transition-colors duration-200 hover:bg-[#702237] active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5B1A2B]"
+                  className="group relative inline-flex min-h-[50px] w-full cursor-pointer items-center justify-center gap-2.5 overflow-hidden rounded-full bg-[#5B1A2B] px-7 text-[14.5px] font-semibold text-white shadow-[0_6px_20px_rgba(91,26,43,0.2)] transition-colors duration-200 [@media(hover:hover)]:hover:bg-[#702237] active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5B1A2B] min-[480px]:w-auto"
                 >
-                  <span className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/22 to-transparent transition-transform duration-600 group-hover:translate-x-full" />
-                  <LuvenWaveformMark size={20} color="#FFFFFF" pulse={ctaHover} />
+                  <span className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/22 to-transparent transition-transform duration-600 [@media(hover:hover)]:group-hover:translate-x-full" />
+                  <LuvenWaveformMark size={20} color="#FFFFFF" pulse={ctaHover && animateLoops} />
                   <span>Mulai Sekarang</span>
-                  <ChevronRight size={17} className="transition-transform duration-200 group-hover:translate-x-0.5" />
+                  <ChevronRight
+                    size={17}
+                    className="transition-transform duration-200 [@media(hover:hover)]:group-hover:translate-x-0.5"
+                  />
                 </motion.button>
               </div>
 
@@ -236,49 +243,52 @@ export function HeroSection({ onLearnMore }: { onLearnMore: () => void }) {
               <button
                 type="button"
                 onClick={onLearnMore}
-                className="group relative inline-flex h-[50px] cursor-pointer items-center gap-2.5 overflow-hidden rounded-full border border-[#18181B] bg-white px-7 text-[14.5px] font-semibold text-[#0F0F10] transition-colors duration-200 hover:bg-[#F4F4F5] active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0F0F10]"
+                className="group relative inline-flex min-h-[50px] w-full cursor-pointer items-center justify-center gap-2.5 overflow-hidden rounded-full border border-[#18181B] bg-white px-7 text-[14.5px] font-semibold text-[#0F0F10] transition-colors duration-200 [@media(hover:hover)]:hover:bg-[#F4F4F5] active:scale-[0.98] active:bg-[#F4F4F5] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0F0F10] min-[480px]:w-auto"
               >
-                <span className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-black/5 to-transparent transition-transform duration-600 group-hover:translate-x-full" />
+                <span className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-black/5 to-transparent transition-transform duration-600 [@media(hover:hover)]:group-hover:translate-x-full" />
                 <Play size={15} fill="#0F0F10" className="text-[#0F0F10]" />
                 <span>Pelajari Lebih Lanjut</span>
               </button>
             </motion.div>
           </div>
 
-          {/* RIGHT HERO ILLUSTRATION + EQUALIZER + FLOATING NOTES */}
-          <div className="relative z-10 flex items-end justify-center lg:-ml-12 lg:justify-end">
-            {/* Soft Organic Light-Gray Blob behind Characters */}
+          {/* RIGHT / BOTTOM HERO ILLUSTRATION + EQUALIZER + FLOATING NOTES */}
+          <div className="relative z-10 flex w-full items-end justify-center lg:-ml-10 lg:justify-end">
+            {/* Soft Organic Light-Gray + Mobile Dark Accent Blob behind Characters */}
             <svg
               viewBox="0 0 680 460"
               fill="none"
               aria-hidden="true"
-              className="pointer-events-none absolute bottom-0 left-0 h-[92%] w-[94%] text-[#F2F2F4]"
+              className="pointer-events-none absolute bottom-0 left-1/2 h-[94%] w-[96%] max-w-[680px] -translate-x-1/2 text-[#F2F2F4] lg:left-0 lg:translate-x-0"
             >
               <path
                 d="M225 46C312 -18 468 10 546 98C624 186 644 374 590 460H18C32 356 84 282 146 250C196 224 156 96 225 46Z"
                 fill="currentColor"
               />
+              {/* Contained dark organic circle behind right character on <1024px where top-right corner blob is hidden */}
+              <circle cx="510" cy="210" r="145" fill="#0F0F10" className="lg:hidden" />
             </svg>
 
-            {/* Animated Gray/Maroon Equalizer Bars in Bottom-Left of Hero Illustration */}
+            {/* Animated Equalizer Bars (simplified count on HP, full on tablet/desktop) */}
             <div
               aria-hidden="true"
-              className="pointer-events-none absolute bottom-1 -left-8 z-10 hidden h-16 items-end gap-[5px] sm:flex lg:-left-20"
+              className="pointer-events-none absolute bottom-1 left-2 z-10 flex h-12 items-end gap-[4px] sm:h-16 sm:gap-[5px] lg:-left-20"
             >
-              {EQ_HEIGHTS.map((h, i) => {
-                const isPeakAccent = i === 13 || i === 15 || i === 17
-                return reduce ? (
+              {displayedEqBars.map((h, i) => {
+                const isPeakAccent = i % 5 === 2
+                const scaledH = isCompactMobile ? Math.round(h * 0.65) : h
+                return !animateLoops ? (
                   <span
                     key={i}
-                    style={{ height: h }}
-                    className={`w-[4px] rounded-t-full ${
+                    style={{ height: scaledH }}
+                    className={`w-[3.5px] rounded-t-full sm:w-[4px] ${
                       isPeakAccent ? 'bg-[#5B1A2B]/35' : 'bg-[#D4D4D8]/85'
                     }`}
                   />
                 ) : (
                   <motion.span
                     key={i}
-                    style={{ height: h, originY: 1 }}
+                    style={{ height: scaledH, originY: 1 }}
                     animate={{
                       scaleY: [
                         0.38,
@@ -292,9 +302,9 @@ export function HeroSection({ onLearnMore }: { onLearnMore: () => void }) {
                       duration: 1.5 + (i % 5) * 0.22,
                       repeat: Infinity,
                       ease: 'easeInOut',
-                      delay: i * 0.06,
+                      delay: i * 0.07,
                     }}
-                    className={`w-[4px] rounded-t-full will-change-transform ${
+                    className={`w-[3.5px] rounded-t-full will-change-transform sm:w-[4px] ${
                       isPeakAccent ? 'bg-[#5B1A2B]/40' : 'bg-[#D4D4D8]/90'
                     }`}
                   />
@@ -305,29 +315,27 @@ export function HeroSection({ onLearnMore }: { onLearnMore: () => void }) {
             {/* Subtle 4-point Sparkle Star near Laptop */}
             <motion.div
               aria-hidden="true"
-              animate={reduce ? undefined : { scale: [0.85, 1.15, 0.85], opacity: [0.65, 1, 0.65] }}
+              animate={animateLoops ? { scale: [0.85, 1.15, 0.85], opacity: [0.65, 1, 0.65] } : undefined}
               transition={{ duration: 3.2, repeat: Infinity, ease: 'easeInOut' }}
               className="pointer-events-none absolute bottom-16 left-2 z-20 hidden text-[#0F0F10] sm:block lg:-left-2"
             >
               <SparkleStar size={18} />
             </motion.div>
 
-            {/* Floating Musical Notes (each with unique loop & delay) */}
-            {/* Note 1: Left of boy's head */}
+            {/* Floating Musical Notes (reduced on compact HP for 60fps clarity) */}
             <motion.div
               aria-hidden="true"
               animate={
-                reduce
-                  ? undefined
-                  : { y: [0, -14, -24], rotate: [-8, 5, -4], opacity: [0, 1, 0] }
+                animateLoops
+                  ? { y: [0, -14, -24], rotate: [-8, 5, -4], opacity: [0, 1, 0] }
+                  : undefined
               }
               transition={{ duration: 4.4, repeat: Infinity, ease: 'easeInOut', delay: 0.2 }}
-              className="pointer-events-none absolute left-[12%] top-[24%] z-20 text-[#0F0F10]"
+              className="pointer-events-none absolute left-[10%] top-[20%] z-20 text-[#0F0F10] sm:left-[12%] sm:top-[24%]"
             >
-              <MusicEighthNote size={28} />
+              <MusicEighthNote size={isCompactMobile ? 22 : 28} />
             </motion.div>
 
-            {/* Manga rhythm accent lines left of boy */}
             <svg
               width="28"
               height="22"
@@ -340,79 +348,92 @@ export function HeroSection({ onLearnMore }: { onLearnMore: () => void }) {
               <line x1="12" y1="20" x2="24" y2="12" stroke="#0F0F10" strokeWidth="2.2" strokeLinecap="round" />
             </svg>
 
-            {/* Note 2: Center beamed note between boy & girl */}
             <motion.div
               aria-hidden="true"
               animate={
-                reduce
-                  ? undefined
-                  : { y: [4, -12, -22], rotate: [6, -6, 4], opacity: [0, 1, 0] }
+                animateLoops
+                  ? { y: [4, -12, -22], rotate: [6, -6, 4], opacity: [0, 1, 0] }
+                  : undefined
               }
               transition={{ duration: 4.8, repeat: Infinity, ease: 'easeInOut', delay: 1.3 }}
-              className="pointer-events-none absolute left-[52%] top-[16%] z-20 text-[#0F0F10]"
+              className="pointer-events-none absolute left-[50%] top-[12%] z-20 text-[#0F0F10] sm:left-[52%] sm:top-[16%]"
             >
-              <MusicBeamedNote size={34} />
+              <MusicBeamedNote size={isCompactMobile ? 26 : 34} />
             </motion.div>
 
-            {/* White rhythm lines + White Beamed Note over top-right dark blob */}
-            <svg
-              width="42"
-              height="34"
-              viewBox="0 0 42 34"
-              fill="none"
-              aria-hidden="true"
-              className="pointer-events-none absolute right-[12%] top-[12%] z-20 hidden lg:block"
-            >
-              <line x1="4" y1="26" x2="22" y2="4" stroke="#FFFFFF" strokeWidth="3.2" strokeLinecap="round" />
-              <line x1="14" y1="30" x2="36" y2="15" stroke="#FFFFFF" strokeWidth="3.2" strokeLinecap="round" />
-            </svg>
+            {/* Desktop White Rhythm Lines & White Note over Top-Right Dark Blob */}
+            {!isCompactMobile && (
+              <>
+                <svg
+                  width="42"
+                  height="34"
+                  viewBox="0 0 42 34"
+                  fill="none"
+                  aria-hidden="true"
+                  className="pointer-events-none absolute right-[4%] top-[4%] z-20 hidden lg:block"
+                >
+                  <line x1="4" y1="26" x2="22" y2="4" stroke="#FFFFFF" strokeWidth="3.2" strokeLinecap="round" />
+                  <line x1="14" y1="30" x2="36" y2="15" stroke="#FFFFFF" strokeWidth="3.2" strokeLinecap="round" />
+                </svg>
 
-            <motion.div
-              aria-hidden="true"
-              animate={
-                reduce
-                  ? undefined
-                  : { y: [4, -14, -26], rotate: [-6, 8, -2], opacity: [0, 1, 0] }
-              }
-              transition={{ duration: 5.1, repeat: Infinity, ease: 'easeInOut', delay: 2.1 }}
-              className="pointer-events-none absolute right-[2%] top-[24%] z-20 hidden text-white lg:block"
-            >
-              <MusicBeamedNote size={36} />
-            </motion.div>
+                <motion.div
+                  aria-hidden="true"
+                  animate={
+                    animateLoops
+                      ? { y: [4, -14, -26], rotate: [-6, 8, -2], opacity: [0, 1, 0] }
+                      : undefined
+                  }
+                  transition={{ duration: 5.1, repeat: Infinity, ease: 'easeInOut', delay: 2.1 }}
+                  className="pointer-events-none absolute right-[3%] top-[24%] z-20 hidden text-white lg:block"
+                >
+                  <MusicBeamedNote size={36} />
+                </motion.div>
 
-            {/* Bottom-right small eighth note */}
-            <motion.div
-              aria-hidden="true"
-              animate={
-                reduce
-                  ? undefined
-                  : { y: [2, -10, -18], rotate: [4, -8, 4], opacity: [0, 0.95, 0] }
-              }
-              transition={{ duration: 4.2, repeat: Infinity, ease: 'easeInOut', delay: 2.9 }}
-              className="pointer-events-none absolute bottom-[16%] right-[2%] z-20 text-[#0F0F10]"
-            >
-              <MusicEighthNote size={22} />
-            </motion.div>
+                <motion.div
+                  aria-hidden="true"
+                  animate={
+                    animateLoops
+                      ? { y: [2, -10, -18], rotate: [4, -8, 4], opacity: [0, 0.95, 0] }
+                      : undefined
+                  }
+                  transition={{ duration: 4.2, repeat: Infinity, ease: 'easeInOut', delay: 2.9 }}
+                  className="pointer-events-none absolute bottom-[16%] right-[2%] z-20 hidden text-[#0F0F10] sm:block"
+                >
+                  <MusicEighthNote size={22} />
+                </motion.div>
+              </>
+            )}
 
-            {/* Parallax + Entrance + Slow Float Wrapper for Crisp 2x Hero Characters */}
+            {/* Parallax + Entrance + Slow Float Wrapper for Responsive WebP/PNG Hero Characters */}
             <motion.div
-              style={reduce ? undefined : { x: smoothParX, y: smoothParY }}
-              initial={reduce ? false : { opacity: 0, x: 36 }}
+              style={enableDesktopEffects ? { x: smoothParX, y: smoothParY } : undefined}
+              initial={prefersReduced ? false : { opacity: 0, x: 28 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.9, delay: 0.28, ease: EASE_OUT }}
-              className="relative z-10 w-full max-w-[740px] lg:-mr-8 xl:-mr-16"
+              className="relative z-10 w-full max-w-[680px] lg:max-w-[740px] lg:-mr-4 xl:-mr-10"
             >
-              <motion.img
-                src="/assets/hero-characters.png"
-                alt="Dua kreator musik berheadphone sedang membuat sound dengan laptop dan mikrofon studio"
-                width={918}
-                height={443}
-                decoding="async"
-                fetchPriority="high"
-                animate={reduce ? undefined : { y: [0, -6, 0] }}
+              <motion.div
+                animate={animateLoops ? { y: [0, -6, 0] } : undefined}
                 transition={{ duration: 7, repeat: Infinity, ease: 'easeInOut' }}
-                className="block h-auto w-full object-contain select-none will-change-transform"
-              />
+                className="will-change-transform"
+              >
+                <picture>
+                  <source
+                    type="image/webp"
+                    srcSet="/assets/hero-characters-1x.webp 918w, /assets/hero-characters.webp 1836w"
+                    sizes="(max-width: 639px) 94vw, (max-width: 1023px) 680px, 740px"
+                  />
+                  <img
+                    src="/assets/hero-characters.png"
+                    alt="Dua kreator musik berheadphone sedang membuat sound dengan laptop dan mikrofon studio"
+                    width={918}
+                    height={443}
+                    decoding="async"
+                    fetchPriority="high"
+                    className="block h-auto w-full max-w-full object-contain select-none"
+                  />
+                </picture>
+              </motion.div>
             </motion.div>
           </div>
         </div>

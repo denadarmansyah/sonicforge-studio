@@ -32,7 +32,7 @@ export function LibrarySidebar({ presets, sounds, hasTrack, onAdd, onApply, onDe
   }
   const list = SOUNDS.filter((s) => (cat === 'All' || s.cat === cat) && s.name.toLowerCase().includes(q.toLowerCase()))
   return (
-    <aside className="flex min-h-0 flex-col border-r border-line bg-panel">
+    <aside className="flex h-full min-h-0 min-w-0 flex-col bg-panel lg:border-r lg:border-line">
       <div className="flex gap-1.5 border-b border-line p-2">
         <input ref={file} type="file" accept=".mp3,.wav,.ogg,.m4a,audio/*" hidden onChange={(e) => { const f = e.target.files?.[0]; if (f) onImport(f); e.target.value = '' }} />
         <button className="btn flex-1 justify-center" onClick={() => file.current?.click()}><Upload size={13} />Import audio</button>
@@ -40,15 +40,15 @@ export function LibrarySidebar({ presets, sounds, hasTrack, onAdd, onApply, onDe
       </div>
       <div className="grid grid-cols-2 border-b border-line">
         {([['lib', 'Sound Library'], ['mine', 'Presets and My Sounds']] as const).map(([k, l]) => (
-          <button key={k} onClick={() => setTab(k)} className={`h-8 border-b-2 text-[11px] transition-colors duration-150 ${tab === k ? 'border-accent text-ink' : 'border-transparent text-sub hover:text-ink'}`}>{l}</button>
+          <button key={k} onClick={() => setTab(k)} className={`h-9 cursor-pointer border-b-2 text-[11px] transition-colors duration-150 lg:h-8 ${tab === k ? 'border-accent text-ink' : 'border-transparent text-sub hover:text-ink'}`}>{l}</button>
         ))}
       </div>
       {tab === 'lib' ? (
         <>
           <div className="space-y-2 border-b border-line p-2">
-            <div className="relative"><Search size={13} className="absolute left-2 top-[8px] text-mute" /><input className="inp w-full pl-7" placeholder="Search sounds" value={q} onChange={(e) => setQ(e.target.value)} /></div>
+            <div className="relative"><Search size={13} className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 text-mute" /><input className="inp w-full pl-7" placeholder="Search sounds" value={q} onChange={(e) => setQ(e.target.value)} /></div>
             <div className="flex flex-wrap gap-1">
-              {['All', ...SOUND_CATS].map((c) => <button key={c} className={`btn h-6 px-2 text-[11px] ${cat === c ? 'on' : ''}`} onClick={() => setCat(c)}>{c}</button>)}
+              {['All', ...SOUND_CATS].map((c) => <button key={c} className={`btn h-6 min-h-[30px] px-2 text-[11px] lg:min-h-0 ${cat === c ? 'on' : ''}`} onClick={() => setCat(c)}>{c}</button>)}
             </div>
           </div>
           <div className="min-h-0 flex-1 overflow-y-auto">

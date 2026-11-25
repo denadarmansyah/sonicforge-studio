@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Play, Plus, Save, X } from 'lucide-react'
 import { engine } from '../audio/audioEngine'
 import { SOUNDS, SYNTH_BASE, synthesize } from '../audio/proceduralSounds'
@@ -16,13 +16,35 @@ export function CustomBuilderModal({ fx, onClose, onSavePreset, onAddSound, onSa
   const [sn, setSn] = useState('My Sound'), [p, setP] = useState<SynthParams>(SOUNDS.find((s) => s.id === 'sub-drop')!.p)
   const set = (x: Partial<SynthParams>) => setP({ ...p, ...x })
   const build = () => synthesize(p, engine.ctx.sampleRate)
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [onClose])
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70" onPointerDown={onClose}>
-      <div role="dialog" aria-label="Custom Sound and Voice Builder" className="flex max-h-[86vh] w-[520px] flex-col rounded-[6px] border border-line bg-panel" onPointerDown={(e) => e.stopPropagation()}>
-        <div className="flex items-center justify-between border-b border-line px-4 py-3"><h2 className="text-[13px] font-semibold">Custom Sound and Voice Builder</h2><button className="btn sq" onClick={onClose} aria-label="Close"><X size={13} /></button></div>
-        <div className="grid grid-cols-2 border-b border-line">
-          {([['voice', 'Voice preset'], ['synth', 'Sound designer']] as const).map(([k, l]) => <button key={k} onClick={() => setTab(k)} className={`h-8 border-b-2 text-[11px] ${tab === k ? 'border-accent' : 'border-transparent text-sub hover:text-ink'}`}>{l}</button>)}
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 md:items-center md:p-4" onPointerDown={onClose}>
+      {/* Near-full-screen bottom sheet on HP (<768px), centered 520px dialog on desktop, sticky action footer */}
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label="Custom Sound and Voice Builder"
+        className="flex max-h-[92dvh] w-full flex-col rounded-t-2xl border border-line bg-panel md:max-h-[86dvh] md:w-[520px] md:rounded-[6px]"
+        onPointerDown={(e) => e.stopPropagation()}
+      >
+        <div className="flex shrink-0 items-center justify-between border-b border-line px-4 py-2.5 md:py-3">
+          <h2 className="text-[13px] font-semibold">Custom Sound and Voice Builder</h2>
+          <button className="btn sq" onClick={onClose} aria-label="Close"><X size={13} /></button>
         </div>
+
+        <div className="grid shrink-0 grid-cols-2 border-b border-line">
+          {([['voice', 'Voice preset'], ['synth', 'Sound designer']] as const).map(([k, l]) => (
+            <button key={k} onClick={() => setTab(k)} className={`h-9 cursor-pointer border-b-2 text-[11px] md:h-8 ${tab === k ? 'border-accent text-ink' : 'border-transparent text-sub hover:text-ink'}`}>{l}</button>
+          ))}
+        </div>
+
+        {/* Scrollable Content Body */}
         <div className="min-h-0 flex-1 space-y-2 overflow-y-auto p-4">
           {tab === 'voice' ? (
             <>
@@ -31,11 +53,10 @@ export function CustomBuilderModal({ fx, onClose, onSavePreset, onAddSound, onSa
               <select className="inp w-full" value={pc} onChange={(e) => setPc(e.target.value)}>{PRESET_CATS.map((c) => <option key={c}>{c}</option>)}</select>
               <textarea className="inp h-20 w-full resize-none py-1.5" placeholder="Voice character notes" value={pnote} onChange={(e) => setPnote(e.target.value)} />
               {!fx && <p className="text-clip">Select a track first so there are settings to save.</p>}
-              <button className="btn pri" disabled={!fx || !pn.trim()} onClick={() => { if (fx) { onSavePreset({ id: crypto.randomUUID(), name: pn.trim(), cat: pc, note: pnote.trim(), fx: { ...fx, bypass: false } }); onClose() } }}><Save size={13} />Save preset</button>
             </>
           ) : (
             <>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                 <select className="inp" onChange={(e) => { const id = TYPES[e.target.value]; setP(id ? SOUNDS.find((s) => s.id === id)!.p : { ...SYNTH_BASE, f0: 440, f1: 440, dur: 1.5, d: 1 }) }}>{Object.keys(TYPES).map((t) => <option key={t}>{t}</option>)}</select>
                 <select className="inp" value={p.wave} onChange={(e) => set({ wave: e.target.value as Wave })}>{WAVES.map((w) => <option key={w} value={w}>{w}</option>)}</select>
               </div>
@@ -49,12 +70,26 @@ export function CustomBuilderModal({ fx, onClose, onSavePreset, onAddSound, onSa
               <Param label="LP cutoff" v={p.cutoff} min={100} max={20000} step={50} unit=" Hz" on={(n) => set({ cutoff: n, cutoff1: n })} />
               <Param label="Sub drive" v={p.drive * 100} min={0} max={100} unit="%" on={(n) => set({ drive: n / 100 })} />
               <input className="inp w-full" value={sn} onChange={(e) => setSn(e.target.value)} aria-label="Sound name" />
-              <div className="flex gap-2">
-                <button className="btn" onClick={() => engine.preview(build())}><Play size={13} />Preview Sound</button>
-                <button className="btn" onClick={() => onAddSound(build(), sn)}><Plus size={13} />Add to Timeline</button>
-                <button className="btn pri" disabled={!sn.trim()} onClick={() => onSaveSound({ id: crypto.randomUUID(), name: sn.trim(), p })}><Save size={13} />Save to My Library</button>
-              </div>
             </>
+          )}
+        </div>
+
+        {/* Sticky Action Footer (always visible on short screens) */}
+        <div className="shrink-0 border-t border-line bg-panel px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+          {tab === 'voice' ? (
+            <button
+              className="btn pri w-full justify-center sm:w-auto"
+              disabled={!fx || !pn.trim()}
+              onClick={() => { if (fx) { onSavePreset({ id: crypto.randomUUID(), name: pn.trim(), cat: pc, note: pnote.trim(), fx: { ...fx, bypass: false } }); onClose() } }}
+            >
+              <Save size={13} />Save preset
+            </button>
+          ) : (
+            <div className="flex flex-wrap gap-2">
+              <button className="btn flex-1 justify-center sm:flex-none" onClick={() => engine.preview(build())}><Play size={13} />Preview Sound</button>
+              <button className="btn flex-1 justify-center sm:flex-none" onClick={() => onAddSound(build(), sn)}><Plus size={13} />Add to Timeline</button>
+              <button className="btn pri w-full justify-center sm:w-auto" disabled={!sn.trim()} onClick={() => onSaveSound({ id: crypto.randomUUID(), name: sn.trim(), p })}><Save size={13} />Save to My Library</button>
+            </div>
           )}
         </div>
       </div>

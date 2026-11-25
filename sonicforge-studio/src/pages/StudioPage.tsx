@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { AudioWaveform, FolderOpen, SlidersHorizontal } from 'lucide-react'
 import { engine } from '../audio/audioEngine'
 import { renderMix } from '../audio/offlineRenderer'
 import { demoVoice } from '../audio/proceduralSounds'
@@ -21,6 +22,7 @@ export function StudioPage() {
   const [pos, setPos] = useState(0), [playing, setPlaying] = useState(false), [loop, setLoop] = useState(false)
   const [pps, setPps] = useState(80), [name, setName] = useState('Untitled Session'), [builder, setBuilder] = useState(false)
   const [busy, setBusy] = useState(false), [bits, setBits] = useState<16 | 24>(16), [msg, setMsg] = useState('')
+  const [mobileTab, setMobileTab] = useState<'library' | 'timeline' | 'inspector'>('timeline')
   const [custom, setCustom] = useLocal<Preset[]>('sf.presets', []), [sounds, setSounds] = useLocal<SavedSound[]>('sf.sounds', [])
   const tr = useRef(tracks), posRef = useRef(0)
   tr.current = tracks
@@ -74,23 +76,111 @@ export function StudioPage() {
   }
 
   return (
-    <div className="studio-shell grid h-screen grid-rows-[48px_1fr_24px]" onDragOver={(e) => e.preventDefault()} onDrop={(e) => { e.preventDefault(); Array.from(e.dataTransfer.files).forEach(importFile) }}>
-      <TopBar name={name} setName={setName} playing={playing} loop={loop} pos={pos} busy={busy} bits={bits} setBits={setBits}
+    <div
+      className="studio-shell studio-grid-responsive grid h-dvh grid-rows-[48px_minmax(0,1fr)_22px_auto] lg:grid-rows-[48px_1fr_24px]"
+      onDragOver={(e) => e.preventDefault()}
+      onDrop={(e) => { e.preventDefault(); Array.from(e.dataTransfer.files).forEach(importFile) }}
+    >
+      <TopBar
+        name={name} setName={setName} playing={playing} loop={loop} pos={pos} busy={busy} bits={bits} setBits={setBits}
         onPlay={toggle} onStop={stop} onStart={() => seek(0)} onLoop={() => setLoop(!loop)} onBuilder={() => setBuilder(true)} onExport={doExport}
-        onRecorded={(b) => addBuffer(b, 'Mic take ' + (tracks.length + 1), 0)} onError={setMsg} />
-      <div className="grid min-h-0 grid-cols-[280px_1fr_320px]">
-        <LibrarySidebar presets={presets} sounds={sounds} hasTrack={!!track} onAdd={(b, n) => addBuffer(b, n)}
-          onApply={(p) => patchFx({ ...DEFAULT_FX, ...p.fx, bypass: false })} onDelSound={(id) => setSounds(sounds.filter((s) => s.id !== id))}
-          onDelPreset={(id) => setCustom(custom.filter((p) => p.id !== id))} onImport={importFile} onDemo={() => addBuffer(demoVoice(engine.ctx.sampleRate), 'Demo voice', 0)} />
-        <TimelineWorkspace tracks={tracks} sel={sel} pos={pos} pps={pps} endT={endT} onSel={setSel} onSeek={seek} onZoom={setPps}
-          onPatch={patch} onDup={dup} onDel={del} onDemo={() => addBuffer(demoVoice(engine.ctx.sampleRate), 'Demo voice', 0)} />
-        <InspectorPanel track={track} presets={presets} onFx={patchFx} onReset={() => patchFx({ ...DEFAULT_FX })} onApply={(p) => patchFx({ ...DEFAULT_FX, ...p.fx, bypass: false })} />
+        onRecorded={(b) => addBuffer(b, 'Mic take ' + (tracks.length + 1), 0)} onError={setMsg}
+      />
+
+      {/* >=1280px: exact 280px | 1fr | 320px | 1024-1279px: 240px | 1fr | 280px | <1024px: single full-screen active tab panel */}
+      <div className="min-h-0 min-w-0 lg:grid lg:grid-cols-[240px_1fr_280px] xl:grid-cols-[280px_1fr_320px]">
+        <div className={`${mobileTab === 'library' ? 'block h-full' : 'hidden'} min-h-0 min-w-0 lg:block`}>
+          <LibrarySidebar
+            presets={presets} sounds={sounds} hasTrack={!!track}
+            onAdd={(b, n) => { addBuffer(b, n); setMobileTab('timeline') }}
+            onApply={(p) => patchFx({ ...DEFAULT_FX, ...p.fx, bypass: false })}
+            onDelSound={(id) => setSounds(sounds.filter((s) => s.id !== id))}
+            onDelPreset={(id) => setCustom(custom.filter((p) => p.id !== id))}
+            onImport={(f) => { void importFile(f); setMobileTab('timeline') }}
+            onDemo={() => { addBuffer(demoVoice(engine.ctx.sampleRate), 'Demo voice', 0); setMobileTab('timeline') }}
+          />
+        </div>
+
+        <div className={`${mobileTab === 'timeline' ? 'block h-full' : 'hidden'} min-h-0 min-w-0 lg:block`}>
+          <TimelineWorkspace
+            tracks={tracks} sel={sel} pos={pos} pps={pps} endT={endT}
+            onSel={setSel} onSeek={seek} onZoom={setPps}
+            onPatch={patch} onDup={dup} onDel={del}
+            onDemo={() => addBuffer(demoVoice(engine.ctx.sampleRate), 'Demo voice', 0)}
+            onEditEffects={() => setMobileTab('inspector')}
+          />
+        </div>
+
+        <div className={`${mobileTab === 'inspector' ? 'block h-full' : 'hidden'} min-h-0 min-w-0 lg:block`}>
+          <InspectorPanel
+            track={track} tracks={tracks} presets={presets}
+            onSel={setSel} onPatchTrack={patch}
+            onFx={patchFx} onReset={() => patchFx({ ...DEFAULT_FX })}
+            onApply={(p) => patchFx({ ...DEFAULT_FX, ...p.fx, bypass: false })}
+          />
+        </div>
       </div>
-      <footer className="flex items-center justify-between border-t border-line bg-panel px-3 font-mono text-[11px] tabular-nums text-sub">
-        <span>{msg || 'Drop audio files anywhere to import.'}</span><span>{tracks.length} tracks</span>
+
+      {/* Status Footer (compact on HP, identical 24px on >=1024px) */}
+      <footer className="flex min-w-0 items-center justify-between gap-2 border-t border-line bg-panel px-2.5 font-mono text-[10.5px] tabular-nums text-sub lg:px-3 lg:text-[11px]">
+        <span className="truncate">{msg || 'Drop audio files anywhere to import.'}</span>
+        <span className="shrink-0">{tracks.length} tracks</span>
       </footer>
-      {builder && <CustomBuilderModal fx={track?.fx} onClose={() => setBuilder(false)} onSavePreset={(p) => setCustom([...custom, p])}
-        onAddSound={(b, n) => addBuffer(b, n)} onSaveSound={(s) => { setSounds([...sounds, s]); setMsg(`Saved “${s.name}” to My Library.`) }} />}
+
+      {/* Bottom Tab Bar (<1024px only) */}
+      <nav
+        aria-label="Studio workspace panels"
+        className="grid grid-cols-3 border-t border-line bg-panel pb-[env(safe-area-inset-bottom)] lg:hidden"
+      >
+        <button
+          type="button"
+          onClick={() => setMobileTab('library')}
+          className={`studio-landscape-compact flex min-h-12 cursor-pointer items-center justify-center gap-1.5 border-t-2 text-[11.5px] font-medium transition-colors ${
+            mobileTab === 'library' ? 'border-accent bg-raised text-ink' : 'border-transparent text-sub'
+          }`}
+        >
+          <FolderOpen size={14} />
+          <span>Library</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setMobileTab('timeline')}
+          className={`studio-landscape-compact flex min-h-12 cursor-pointer items-center justify-center gap-1.5 border-t-2 text-[11.5px] font-medium transition-colors ${
+            mobileTab === 'timeline' ? 'border-accent bg-raised text-ink' : 'border-transparent text-sub'
+          }`}
+        >
+          <AudioWaveform size={14} />
+          <span>Timeline</span>
+          {tracks.length > 0 && (
+            <span className="rounded-full border border-line bg-base px-1.5 text-[10px] font-mono tabular-nums text-ink">
+              {tracks.length}
+            </span>
+          )}
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setMobileTab('inspector')}
+          className={`studio-landscape-compact flex min-h-12 cursor-pointer items-center justify-center gap-1.5 border-t-2 text-[11.5px] font-medium transition-colors ${
+            mobileTab === 'inspector' ? 'border-accent bg-raised text-ink' : 'border-transparent text-sub'
+          }`}
+        >
+          <SlidersHorizontal size={14} />
+          <span>Inspector</span>
+          {track && <span className="h-1.5 w-1.5 rounded-full bg-accent" />}
+        </button>
+      </nav>
+
+      {builder && (
+        <CustomBuilderModal
+          fx={track?.fx}
+          onClose={() => setBuilder(false)}
+          onSavePreset={(p) => setCustom([...custom, p])}
+          onAddSound={(b, n) => { addBuffer(b, n); setMobileTab('timeline') }}
+          onSaveSound={(s) => { setSounds([...sounds, s]); setMsg(`Saved “${s.name}” to My Library.`) }}
+        />
+      )}
     </div>
   )
 }
