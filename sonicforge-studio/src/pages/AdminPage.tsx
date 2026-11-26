@@ -1,14 +1,17 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link, Navigate } from 'react-router-dom'
-import { Ban, CheckCircle2, EyeOff, Search, ShieldAlert, Sparkles, Trash2 } from 'lucide-react'
+import { Ban, CheckCircle2, Crown, EyeOff, Search, ShieldAlert, Sparkles, Trash2 } from 'lucide-react'
+import { PLANS } from '../config/plans'
 import { useAuth } from '../context/AuthContext'
 import {
   adminFetchModerationData,
   adminResolveReport,
+  adminSetUserPlan,
   adminUpdateProfileFlags,
   adminUpdateTemplateStatus,
 } from '../lib/platformStore'
 import { useDocumentMeta } from '../lib/seo'
+import { getEffectivePlan } from '../lib/themeConfig'
 import { AbuseReport, CreatorTemplate, Profile } from '../lib/types'
 import { VerifiedBadgeIcon } from '../ui/BrandIcons'
 import { Avatar, Badge, Button, Card, Input, LinkButton, Skeleton, Tabs, useToast } from '../ui/primitives'
@@ -196,75 +199,138 @@ export function AdminPage() {
             )
           ) : tab === 'users' ? (
             <div className="space-y-3">
-              {profiles.map((p) => (
-                <Card key={p.id} className="flex flex-col justify-between gap-4 p-4 sm:flex-row sm:items-center">
-                  <div className="flex min-w-0 items-center gap-3">
-                    <Avatar src={p.avatar_url} name={p.display_name} size="md" />
-                    <div className="min-w-0">
-                      <div className="flex flex-wrap items-center gap-1.5">
-                        <Link to={`/@${p.username}`} className="font-bold text-fg no-underline hover:underline">
-                          {p.display_name}
-                        </Link>
-                        {p.is_verified && <VerifiedBadgeIcon size={14} />}
-                        {p.is_featured && <Badge variant="accent">Pilihan</Badge>}
-                        {p.is_banned && <Badge variant="err">Banned</Badge>}
+              {profiles.map((p) => {
+                const effPlan = getEffectivePlan(p.plan, p.plan_expires_at)
+                return (
+                  <Card key={p.id} className="flex flex-col justify-between gap-4 p-4 lg:flex-row lg:items-center">
+                    <div className="flex min-w-0 items-center gap-3">
+                      <Avatar src={p.avatar_url} name={p.display_name} size="md" />
+                      <div className="min-w-0">
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          <Link to={`/@${p.username}`} className="font-bold text-fg no-underline hover:underline">
+                            {p.display_name}
+                          </Link>
+                          {p.is_verified && <VerifiedBadgeIcon size={14} />}
+                          <Badge variant={effPlan === 'pro' ? 'accent' : 'neutral'}>
+                            {effPlan === 'pro' ? 'PRO' : 'FREE'}
+                          </Badge>
+                          {p.is_featured && <Badge variant="ok">Pilihan</Badge>}
+                          {p.is_banned && <Badge variant="err">Banned</Badge>}
+                        </div>
+                        <span className="block font-mono text-[12px] text-fg-sec">
+                          @{p.username} · {p.category}
+                          {effPlan === 'pro' && p.plan_expires_at
+                            ? ` · s/d ${new Date(p.plan_expires_at).toLocaleDateString('id-ID')}`
+                            : ''}
+                        </span>
                       </div>
-                      <span className="font-mono text-[12px] text-fg-sec">
-                        @{p.username} · {p.category}
-                      </span>
                     </div>
-                  </div>
 
-                  <div className="flex flex-wrap gap-2">
-                    <Button
-                      variant={p.is_verified ? 'secondary' : 'outline'}
-                      size="sm"
-                      onClick={async () => {
-                        await adminUpdateProfileFlags(p.id, { is_verified: !p.is_verified })
-                        await loadAll()
-                        pushToast(
-                          !p.is_verified ? `@${p.username} diverifikasi.` : `Verifikasi @${p.username} dicabut.`
-                        )
-                      }}
-                    >
-                      <CheckCircle2 size={14} />
-                      <span>{p.is_verified ? 'Cabut Verifikasi' : 'Verifikasi'}</span>
-                    </Button>
+                    <div className="flex flex-wrap gap-2">
+                      {effPlan === 'pro' ? (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={async () => {
+                            try {
+                              await adminSetUserPlan(p.id, 'free', null, 0)
+                              await loadAll()
+                              pushToast(`Paket Pro @${p.username} dicabut ke Free.`)
+                            } catch (err) {
+                              pushToast(err instanceof Error ? err.message : 'Gagal mengubah paket.', 'err')
+                            }
+                          }}
+                        >
+                          <span>Cabut Pro</span>
+                        </Button>
+                      ) : (
+                        <>
+                          <Button
+                            variant="primary"
+                            size="sm"
+                            onClick={async () => {
+                              try {
+                                const exp = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+                                await adminSetUserPlan(p.id, 'pro', exp, PLANS.pro.monthlyPriceIdr)
+                                await loadAll()
+                                pushToast(`Pro 30 hari diaktifkan untuk @${p.username}.`)
+                              } catch (err) {
+                                pushToast(err instanceof Error ? err.message : 'Gagal mengaktifkan Pro.', 'err')
+                              }
+                            }}
+                          >
+                            <Crown size={14} />
+                            <span>Pro 30h</span>
+                          </Button>
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            onClick={async () => {
+                              try {
+                                const exp = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString()
+                                await adminSetUserPlan(p.id, 'pro', exp, PLANS.pro.yearlyPriceIdr)
+                                await loadAll()
+                                pushToast(`Pro 1 tahun diaktifkan untuk @${p.username}.`)
+                              } catch (err) {
+                                pushToast(err instanceof Error ? err.message : 'Gagal mengaktifkan Pro.', 'err')
+                              }
+                            }}
+                          >
+                            <span>Pro 1th</span>
+                          </Button>
+                        </>
+                      )}
 
-                    <Button
-                      variant={p.is_featured ? 'secondary' : 'outline'}
-                      size="sm"
-                      onClick={async () => {
-                        await adminUpdateProfileFlags(p.id, { is_featured: !p.is_featured })
-                        await loadAll()
-                        pushToast(
-                          !p.is_featured
-                            ? `@${p.username} ditambahkan ke Kreator Pilihan.`
-                            : `@${p.username} dihapus dari Kreator Pilihan.`
-                        )
-                      }}
-                    >
-                      <Sparkles size={14} />
-                      <span>{p.is_featured ? 'Hapus Pilihan' : 'Jadikan Pilihan'}</span>
-                    </Button>
+                      <Button
+                        variant={p.is_verified ? 'secondary' : 'outline'}
+                        size="sm"
+                        onClick={async () => {
+                          await adminUpdateProfileFlags(p.id, { is_verified: !p.is_verified })
+                          await loadAll()
+                          pushToast(
+                            !p.is_verified ? `@${p.username} diverifikasi.` : `Verifikasi @${p.username} dicabut.`
+                          )
+                        }}
+                      >
+                        <CheckCircle2 size={14} />
+                        <span>{p.is_verified ? 'Cabut Verifikasi' : 'Verifikasi'}</span>
+                      </Button>
 
-                    <Button
-                      variant={p.is_banned ? 'primary' : 'danger'}
-                      size="sm"
-                      onClick={async () => {
-                        await adminUpdateProfileFlags(p.id, { is_banned: !p.is_banned })
-                        await loadAll()
-                        pushToast(
-                          !p.is_banned ? `@${p.username} ditangguhkan.` : `Penangguhan @${p.username} dibuka.`
-                        )
-                      }}
-                    >
-                      <Ban size={14} />
-                      <span>{p.is_banned ? 'Pulihkan Akun' : 'Ban Akun'}</span>
-                    </Button>
-                  </div>
-                </Card>
-              ))}
+                      <Button
+                        variant={p.is_featured ? 'secondary' : 'outline'}
+                        size="sm"
+                        onClick={async () => {
+                          await adminUpdateProfileFlags(p.id, { is_featured: !p.is_featured })
+                          await loadAll()
+                          pushToast(
+                            !p.is_featured
+                              ? `@${p.username} ditambahkan ke Kreator Pilihan.`
+                              : `@${p.username} dihapus dari Kreator Pilihan.`
+                          )
+                        }}
+                      >
+                        <Sparkles size={14} />
+                        <span>{p.is_featured ? 'Hapus Pilihan' : 'Jadikan Pilihan'}</span>
+                      </Button>
+
+                      <Button
+                        variant={p.is_banned ? 'primary' : 'destructive'}
+                        size="sm"
+                        onClick={async () => {
+                          await adminUpdateProfileFlags(p.id, { is_banned: !p.is_banned })
+                          await loadAll()
+                          pushToast(
+                            !p.is_banned ? `@${p.username} ditangguhkan.` : `Penangguhan @${p.username} dibuka.`
+                          )
+                        }}
+                      >
+                        <Ban size={14} />
+                        <span>{p.is_banned ? 'Pulihkan Akun' : 'Ban Akun'}</span>
+                      </Button>
+                    </div>
+                  </Card>
+                )
+              })}
             </div>
           ) : (
             <div className="space-y-3">

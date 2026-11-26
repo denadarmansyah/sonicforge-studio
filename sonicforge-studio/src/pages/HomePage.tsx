@@ -17,10 +17,19 @@ import {
 import { useAuth } from '../context/AuthContext'
 import { fetchPublicFeed, recordAnalyticsEvent } from '../lib/platformStore'
 import { useDocumentMeta } from '../lib/seo'
+import { DEFAULT_FREE_THEME, DEFAULT_PROFILE_SETTINGS } from '../lib/themeConfig'
 import { CreatorTemplate, Profile } from '../lib/types'
 import { VerifiedBadgeIcon } from '../ui/BrandIcons'
 import { Logo } from '../ui/Logo'
-import { Avatar, Badge, Card, EASE_SMOOTH, LinkButton } from '../ui/primitives'
+import {
+  Avatar,
+  Badge,
+  Card,
+  EASE_SMOOTH,
+  EditorialIllustration,
+  LinkButton,
+  UnstyledButton,
+} from '../ui/primitives'
 import { PublicProfileRenderer, TemplateCard } from '../ui/ProfileViewCard'
 import { SiteLayout } from '../ui/SiteLayout'
 
@@ -42,6 +51,11 @@ const EXAMPLE_PLACEHOLDER_PROFILE: Profile = {
   is_featured: false,
   is_banned: false,
   onboarding_completed: true,
+  plan: 'free',
+  plan_expires_at: null,
+  theme: DEFAULT_FREE_THEME,
+  settings: DEFAULT_PROFILE_SETTINGS,
+  referred_by: null,
   created_at: '2026-01-01T00:00:00.000Z',
 }
 
@@ -98,8 +112,6 @@ const FAQS = [
     a: 'Alat Studio (/studio) memungkinkan Anda mengekstrak suara dari berkas video (.mp4, .mov, .webm), mengatur EQ/pitch/reverb, lalu mengunduhnya sebagai MP3 atau WAV untuk bahan template Anda.',
   },
 ]
-
-const METER_BARS = [42, 68, 86, 54, 92, 74, 48, 82, 64, 90, 58, 76, 44, 70]
 
 export function HomePage() {
   const { user, profile } = useAuth()
@@ -244,13 +256,20 @@ export function HomePage() {
               </motion.div>
             </div>
 
-            {/* Right Column: Authentic Component Mockup Clearly Badged as Example Layout */}
+            {/* Right Column: Hero 2D Editorial Illustration + Authentic Live Profile Mockup */}
             <motion.div
               initial={reduce ? false : { opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.75, delay: 0.25, ease: EASE_SMOOTH }}
-              className="relative"
+              className="relative space-y-4"
             >
+              <EditorialIllustration
+                slug="hero-main"
+                alt="Ilustrasi meja kreator video pendek dengan ponsel ber-timeline vertikal, headphone studio, dan mikrofon"
+                ratio="16:9"
+                sizes="(max-width: 1024px) 100vw, 560px"
+                priority
+              />
               <div className="rounded-[28px] border border-edge bg-elevated p-3 sm:p-4">
                 <div className="mb-3 flex items-center justify-between gap-2 px-1">
                   <div className="flex items-center gap-1.5" aria-hidden="true">
@@ -454,37 +473,65 @@ export function HomePage() {
 
         <div className="mt-8 grid grid-cols-1 gap-5 md:grid-cols-12">
           <Card className="p-6 sm:p-7 md:col-span-7">
+            <EditorialIllustration
+              slug="feature-profile"
+              alt="Ilustrasi halaman profil link-in-bio kreator pada layar ponsel beserta kode QR"
+              ratio="16:9"
+              sizes="(max-width: 768px) 100vw, 620px"
+              className="mb-5 rounded-xl bg-bg"
+            />
             <Smartphone size={20} className="text-accent" />
-            <h3 className="mt-4 text-[19px] font-bold text-fg">
+            <h3 className="mt-3 text-[19px] font-bold text-fg">
               Halaman Profil Cepat di Browser Dalam Aplikasi TikTok
             </h3>
             <p className="mt-2 text-[14px] leading-relaxed text-fg-sec">
-              Mayoritas audiens membuka link bio dari ponsel. Halaman profil Luven dimuat ringan, memakai proporsi poster vertikal 4:5, dan tetap terlihat proporsional meskipun Anda baru memajang satu template tanpa banner.
+              Mayoritas audiens membuka link bio dari ponsel. Halaman profil Luven dimuat ringan, fokus penuh ke daftar tautan kreator, dan mendukung kustomisasi Studio Tampilan Pro.
             </p>
           </Card>
 
           <Card className="p-6 sm:p-7 md:col-span-5">
+            <EditorialIllustration
+              slug="feature-template"
+              alt="Ilustrasi kartu template video vertikal beserta penanda pemotongan timeline"
+              ratio="16:9"
+              sizes="(max-width: 768px) 100vw, 440px"
+              className="mb-5 rounded-xl bg-bg"
+            />
             <QrCode size={20} className="text-accent" />
-            <h3 className="mt-4 text-[19px] font-bold text-fg">Kode QR Siap Unduh</h3>
+            <h3 className="mt-3 text-[19px] font-bold text-fg">Katalog Template & Kode QR</h3>
             <p className="mt-2 text-[14px] leading-relaxed text-fg-sec">
-              Unduh kode QR PNG beresolusi bersih untuk ditempel di akhir video watermark atau dibagikan ke komunitas kreator.
+              Susun koleksi template CapCut vertikal 4:5 dan unduh kode QR PNG tajam untuk dibagikan ke pengikutmu.
             </p>
           </Card>
 
           <Card className="p-6 sm:p-7 md:col-span-5">
+            <EditorialIllustration
+              slug="feature-soundlab"
+              alt="Ilustrasi headphone studio dengan gelombang suara konsentris dan modul equalizer"
+              ratio="16:9"
+              sizes="(max-width: 768px) 100vw, 440px"
+              className="mb-5 rounded-xl bg-bg"
+            />
             <ShieldCheck size={20} className="text-accent" />
-            <h3 className="mt-4 text-[19px] font-bold text-fg">
+            <h3 className="mt-3 text-[19px] font-bold text-fg">
               Tautan Terverifikasi & Bebas Spam
             </h3>
             <p className="mt-2 text-[14px] leading-relaxed text-fg-sec">
-              Setiap tautan keluar diperiksa di sisi klien dan database agar hanya mengarah ke domain resmi TikTok dan CapCut melalui koneksi HTTPS.
+              Setiap tautan keluar diperiksa di sisi klien dan database agar hanya mengarah ke domain resmi melalui HTTPS.
             </p>
           </Card>
 
           <Card className="flex flex-col justify-between p-6 sm:p-7 md:col-span-7">
             <div>
+              <EditorialIllustration
+                slug="feature-studio"
+                alt="Ilustrasi editor audio multitrack dengan monitor studio dan blok gelombang suara"
+                ratio="16:9"
+                sizes="(max-width: 768px) 100vw, 620px"
+                className="mb-5 rounded-xl bg-bg"
+              />
               <AudioWaveform size={20} className="text-accent" />
-              <h3 className="mt-4 text-[19px] font-bold text-fg">
+              <h3 className="mt-3 text-[19px] font-bold text-fg">
                 Dilengkapi Alat Audio Studio di Browser
               </h3>
               <p className="mt-2 text-[14px] leading-relaxed text-fg-sec">
@@ -518,11 +565,10 @@ export function HomePage() {
                   key={item.q}
                   className="overflow-hidden rounded-2xl border border-light-edge bg-light-surface"
                 >
-                  <button
-                    type="button"
+                  <UnstyledButton
                     aria-expanded={isOpen}
                     onClick={() => setOpenFaq(isOpen ? null : idx)}
-                    className="flex min-h-14 w-full cursor-pointer items-center justify-between gap-4 px-5 py-4 text-left text-[15px] font-semibold text-light-fg focus-visible:outline-2 focus-visible:outline-light-fg"
+                    className="flex min-h-14 w-full items-center justify-between gap-4 px-5 py-4 text-left text-[15px] font-semibold text-light-fg"
                   >
                     <span>{item.q}</span>
                     <ChevronDown
@@ -531,15 +577,14 @@ export function HomePage() {
                         isOpen ? 'rotate-180 text-light-fg' : ''
                       }`}
                     />
-                  </button>
+                  </UnstyledButton>
                   <AnimatePresence initial={false}>
                     {isOpen && (
                       <motion.div
-                        initial={{ height: 0, opacity: 0 }}
-                        animate={{ height: 'auto', opacity: 1 }}
-                        exit={{ height: 0, opacity: 0 }}
-                        transition={{ duration: 0.22, ease: EASE_SMOOTH }}
-                        className="overflow-hidden"
+                        initial={{ opacity: 0, y: -4 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -4 }}
+                        transition={{ duration: 0.18, ease: EASE_SMOOTH }}
                       >
                         <p className="m-0 border-t border-light-edge px-5 py-4 text-[14px] leading-relaxed text-light-sec">
                           {item.a}
@@ -552,19 +597,28 @@ export function HomePage() {
             })}
           </div>
 
-          <div className="mt-12 flex flex-col items-center justify-between gap-5 rounded-2xl border border-edge bg-bg p-7 text-center text-fg sm:flex-row sm:text-left">
-            <div>
-              <h3 className="m-0 text-[20px] font-extrabold tracking-[-0.02em] text-fg">
-                Siap merapikan tautan template kamu?
-              </h3>
-              <p className="mt-1 mb-0 text-[14px] text-fg-sec">
-                Amankan username pilihanmu di luven.my.id hari ini.
-              </p>
+          <div className="mt-12 overflow-hidden rounded-2xl border border-edge bg-bg text-fg">
+            <EditorialIllustration
+              slug="cta-banner"
+              alt="Ilustrasi meja siaran kreator dengan lampu cincin, ponsel di tripod, dan lengan mikrofon"
+              ratio="20:9"
+              sizes="(max-width: 840px) 100vw, 800px"
+              className="rounded-none border-0 border-b border-edge"
+            />
+            <div className="flex flex-col items-center justify-between gap-5 p-7 text-center sm:flex-row sm:text-left">
+              <div>
+                <h3 className="m-0 text-[20px] font-extrabold tracking-[-0.02em] text-fg">
+                  Siap merapikan tautan bio & template kamu?
+                </h3>
+                <p className="mt-1 mb-0 text-[14px] text-fg-sec">
+                  Amankan username pilihanmu di luven.my.id hari ini.
+                </p>
+              </div>
+              <LinkButton to={primaryHref} variant="primary" size="lg" className="shrink-0">
+                <span>Buat halaman kamu</span>
+                <ArrowRight size={16} />
+              </LinkButton>
             </div>
-            <LinkButton to={primaryHref} variant="primary" size="lg" className="shrink-0">
-              <span>Buat halaman kamu</span>
-              <ArrowRight size={16} />
-            </LinkButton>
           </div>
         </div>
       </section>

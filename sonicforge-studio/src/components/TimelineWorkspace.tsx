@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Copy, Mic, SlidersHorizontal, Square, Trash2, Upload, ZoomIn, ZoomOut } from 'lucide-react'
 import { duration, Track } from '../types/audio'
 import { STUDIO_THEME } from '../theme/studioTheme'
+import { Button, IconButton } from '../ui/primitives'
 import { WaveformTrack } from './WaveformTrack'
 
 const HEAD_DESKTOP = 216
@@ -91,20 +92,16 @@ export function TimelineWorkspace({
         <div className="flex min-w-0 items-center gap-2">
           <span className="truncate text-sub">Timeline</span>
           {compact && sel && onEditEffects && (
-            <button
-              type="button"
-              onClick={onEditEffects}
-              className="btn pri h-7 min-h-[30px] px-2.5 text-[11px]"
-            >
-              <SlidersHorizontal size={12} />
-              <span>Edit effects</span>
-            </button>
+            <Button variant="primary" size="sm" onClick={onEditEffects}>
+              <SlidersHorizontal size={13} />
+              <span>Efek</span>
+            </Button>
           )}
         </div>
         <div className="flex shrink-0 items-center gap-1.5">
-          <button className="btn sq" onClick={() => onZoom(Math.max(10, pps / 1.5))} aria-label="Perkecil tampilan"><ZoomOut size={13} /></button>
+          <IconButton size="sm" label="Perkecil tampilan" onClick={() => onZoom(Math.max(10, pps / 1.5))}><ZoomOut size={14} /></IconButton>
           <span className="w-14 text-center font-mono tabular-nums text-sub">{Math.round(pps)} px/s</span>
-          <button className="btn sq" onClick={() => onZoom(Math.min(400, pps * 1.5))} aria-label="Perbesar tampilan"><ZoomIn size={13} /></button>
+          <IconButton size="sm" label="Perbesar tampilan" onClick={() => onZoom(Math.min(400, pps * 1.5))}><ZoomIn size={14} /></IconButton>
         </div>
       </div>
 
@@ -150,25 +147,25 @@ export function TimelineWorkspace({
                       aria-label="Nama track"
                     />
                     <div className="grid grid-cols-4 gap-1">
-                      <button className={`btn sq !h-9 !min-h-9 !w-full ${t.mute ? 'on' : ''}`} onClick={() => onPatch(t.id, { mute: !t.mute })} aria-label="Mute">M</button>
-                      <button className={`btn sq !h-9 !min-h-9 !w-full ${t.solo ? 'on' : ''}`} onClick={() => onPatch(t.id, { solo: !t.solo })} aria-label="Solo">S</button>
-                      <button className="btn sq !h-9 !min-h-9 !w-full" onClick={() => onDup(t.id)} aria-label="Duplikat track"><Copy size={12} /></button>
-                      <button className="btn sq !h-9 !min-h-9 !w-full" onClick={() => onDel(t.id)} aria-label="Hapus track"><Trash2 size={12} /></button>
+                      <IconButton size="sm" active={t.mute} label="Mute" onClick={() => onPatch(t.id, { mute: !t.mute })} className="w-full! font-mono text-[11px]">M</IconButton>
+                      <IconButton size="sm" active={t.solo} label="Solo" onClick={() => onPatch(t.id, { solo: !t.solo })} className="w-full! font-mono text-[11px]">S</IconButton>
+                      <IconButton size="sm" label="Duplikat track" onClick={() => onDup(t.id)} className="w-full!"><Copy size={13} /></IconButton>
+                      <IconButton size="sm" variant="destructive" label="Hapus track" onClick={() => onDel(t.id)} className="w-full!"><Trash2 size={13} /></IconButton>
                     </div>
                   </>
                 ) : (
                   <>
                     <div className="flex items-center gap-1">
-                      <input className="inp h-6 min-w-0 flex-1 px-1.5" value={t.name} onChange={(e) => onPatch(t.id, { name: e.target.value })} aria-label="Nama track" />
-                      <button className="btn sq" onClick={() => onDup(t.id)} aria-label="Duplikat track"><Copy size={12} /></button>
-                      <button className="btn sq" onClick={() => onDel(t.id)} aria-label="Hapus track"><Trash2 size={12} /></button>
+                      <input className="inp h-7 min-w-0 flex-1 px-1.5" value={t.name} onChange={(e) => onPatch(t.id, { name: e.target.value })} aria-label="Nama track" />
+                      <IconButton size="sm" label="Duplikat track" onClick={() => onDup(t.id)}><Copy size={13} /></IconButton>
+                      <IconButton size="sm" variant="destructive" label="Hapus track" onClick={() => onDel(t.id)}><Trash2 size={13} /></IconButton>
                     </div>
                     <div className="flex items-center gap-1.5">
-                      <button className={`btn sq ${t.mute ? 'on' : ''}`} onClick={() => onPatch(t.id, { mute: !t.mute })} aria-label="Mute">M</button>
-                      <button className={`btn sq ${t.solo ? 'on' : ''}`} onClick={() => onPatch(t.id, { solo: !t.solo })} aria-label="Solo">S</button>
+                      <IconButton size="sm" active={t.mute} label="Mute" onClick={() => onPatch(t.id, { mute: !t.mute })} className="font-mono text-[11px]">M</IconButton>
+                      <IconButton size="sm" active={t.solo} label="Solo" onClick={() => onPatch(t.id, { solo: !t.solo })} className="font-mono text-[11px]">S</IconButton>
                       {(['fadeIn', 'fadeOut'] as const).map((k) => (
                         <label key={k} className="flex items-center gap-1 text-mute">{k === 'fadeIn' ? 'In' : 'Out'}
-                          <input type="number" min={0} step={0.1} className="inp h-6 w-[46px] px-1 font-mono tabular-nums" value={t[k]} onChange={(e) => onPatch(t.id, { [k]: Math.max(0, Number(e.target.value)) })} />
+                          <input type="number" min={0} step={0.1} className="inp h-7 w-[46px] px-1 font-mono tabular-nums" value={t[k]} onChange={(e) => onPatch(t.id, { [k]: Math.max(0, Number(e.target.value)) })} />
                         </label>
                       ))}
                     </div>
@@ -186,14 +183,14 @@ export function TimelineWorkspace({
                 Belum ada track. Impor audio atau video, atau rekam dari mikrofon.
               </p>
               <div className="flex flex-wrap items-center gap-2">
-                <button className="btn pri" onClick={onOpenImport} disabled={busy}>
-                  <Upload size={13} />
+                <Button variant="primary" size="sm" disabled={busy} onClick={onOpenImport}>
+                  <Upload size={14} />
                   <span>Impor file</span>
-                </button>
-                <button className={`btn ${rec ? 'on' : ''}`} onClick={onToggleRec}>
-                  {rec ? <Square size={12} /> : <Mic size={13} />}
+                </Button>
+                <Button variant={rec ? 'primary' : 'secondary'} size="sm" onClick={onToggleRec}>
+                  {rec ? <Square size={13} /> : <Mic size={14} />}
                   <span>{rec ? 'Berhenti rekam' : 'Rekam'}</span>
-                </button>
+                </Button>
               </div>
             </div>
           )}

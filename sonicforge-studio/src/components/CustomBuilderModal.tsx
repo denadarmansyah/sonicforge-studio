@@ -4,6 +4,7 @@ import { engine } from '../audio/audioEngine'
 import { SOUNDS, SYNTH_BASE, synthesize } from '../audio/proceduralSounds'
 import { PRESET_CATS } from '../audio/presets'
 import { FX, Preset, SavedSound, SynthParams, Wave } from '../types/audio'
+import { Button, IconButton, UnstyledButton } from '../ui/primitives'
 import { Param } from './InspectorPanel'
 
 const TYPES: Record<string, string> = { 'Sub Bass Drop': 'sub-drop', 'Cinematic Riser': 'riser', 'UI Click / Pop': 'switch', 'Whoosh Transition': 'whoosh', 'Ambient Pad': 'chord', 'Custom Tone': '' }
@@ -25,34 +26,38 @@ export function CustomBuilderModal({ fx, onClose, onSavePreset, onAddSound, onSa
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-bg/80 md:items-center md:p-4" onPointerDown={onClose}>
-      {/* Near-full-screen bottom sheet on HP (<768px), centered 520px dialog on desktop, sticky action footer */}
       <div
         role="dialog"
         aria-modal="true"
         aria-label="Custom Sound and Voice Builder"
-        className="flex max-h-[92dvh] w-full flex-col rounded-t-2xl border border-line bg-panel md:max-h-[86dvh] md:w-[520px] md:rounded-[6px]"
+        className="flex max-h-[92dvh] w-full flex-col rounded-t-2xl border border-line bg-panel md:max-h-[86dvh] md:w-[520px] md:rounded-xl"
         onPointerDown={(e) => e.stopPropagation()}
       >
         <div className="flex shrink-0 items-center justify-between border-b border-line px-4 py-2.5 md:py-3">
-          <h2 className="text-[13px] font-semibold">Custom Sound and Voice Builder</h2>
-          <button className="btn sq" onClick={onClose} aria-label="Close"><X size={13} /></button>
+          <h2 className="text-[13px] font-semibold">Custom Sound & Voice Builder</h2>
+          <IconButton size="sm" label="Tutup builder" onClick={onClose}><X size={15} /></IconButton>
         </div>
 
         <div className="grid shrink-0 grid-cols-2 border-b border-line">
           {([['voice', 'Voice preset'], ['synth', 'Sound designer']] as const).map(([k, l]) => (
-            <button key={k} onClick={() => setTab(k)} className={`h-9 cursor-pointer border-b-2 text-[11px] md:h-8 ${tab === k ? 'border-accent text-ink' : 'border-transparent text-sub hover:text-ink'}`}>{l}</button>
+            <UnstyledButton
+              key={k}
+              onClick={() => setTab(k)}
+              className={`h-9 border-b-2 text-[11.5px] md:h-8 ${tab === k ? 'border-accent text-ink font-semibold' : 'border-transparent text-sub hover:text-ink'}`}
+            >
+              {l}
+            </UnstyledButton>
           ))}
         </div>
 
-        {/* Scrollable Content Body */}
         <div className="min-h-0 flex-1 space-y-2 overflow-y-auto p-4">
           {tab === 'voice' ? (
             <>
-              <p className="text-sub">Saves the full effects chain of the selected track: sub-bass, EQ, saturation, pitch, compressor and reverb.</p>
-              <input className="inp w-full" placeholder="Preset name" value={pn} onChange={(e) => setPn(e.target.value)} />
+              <p className="text-sub">Menyimpan rantai efek lengkap dari track terpilih: sub-bass, EQ, saturasi, pitch, kompresor, dan reverb.</p>
+              <input className="inp w-full" placeholder="Nama preset" value={pn} onChange={(e) => setPn(e.target.value)} />
               <select className="inp w-full" value={pc} onChange={(e) => setPc(e.target.value)}>{PRESET_CATS.map((c) => <option key={c}>{c}</option>)}</select>
-              <textarea className="inp h-20 w-full resize-none py-1.5" placeholder="Voice character notes" value={pnote} onChange={(e) => setPnote(e.target.value)} />
-              {!fx && <p className="text-clip">Select a track first so there are settings to save.</p>}
+              <textarea className="inp h-20 w-full resize-none py-1.5" placeholder="Catatan karakter suara" value={pnote} onChange={(e) => setPnote(e.target.value)} />
+              {!fx && <p className="text-clip">Pilih track terlebih dahulu agar ada pengaturan yang disimpan.</p>}
             </>
           ) : (
             <>
@@ -69,26 +74,27 @@ export function CustomBuilderModal({ fx, onClose, onSavePreset, onAddSound, onSa
               <Param label="Release" v={p.r} min={0.01} max={4} step={0.01} unit=" s" dp={2} on={(n) => set({ r: n })} />
               <Param label="LP cutoff" v={p.cutoff} min={100} max={20000} step={50} unit=" Hz" on={(n) => set({ cutoff: n, cutoff1: n })} />
               <Param label="Sub drive" v={p.drive * 100} min={0} max={100} unit="%" on={(n) => set({ drive: n / 100 })} />
-              <input className="inp w-full" value={sn} onChange={(e) => setSn(e.target.value)} aria-label="Sound name" />
+              <input className="inp w-full" value={sn} onChange={(e) => setSn(e.target.value)} aria-label="Nama suara" />
             </>
           )}
         </div>
 
-        {/* Sticky Action Footer (always visible on short screens) */}
         <div className="shrink-0 border-t border-line bg-panel px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
           {tab === 'voice' ? (
-            <button
-              className="btn pri w-full justify-center sm:w-auto"
+            <Button
+              variant="primary"
+              size="sm"
               disabled={!fx || !pn.trim()}
               onClick={() => { if (fx) { onSavePreset({ id: crypto.randomUUID(), name: pn.trim(), cat: pc, note: pnote.trim(), fx: { ...fx, bypass: false } }); onClose() } }}
+              className="w-full sm:w-auto"
             >
-              <Save size={13} />Save preset
-            </button>
+              <Save size={14} /><span>Simpan Preset</span>
+            </Button>
           ) : (
             <div className="flex flex-wrap gap-2">
-              <button className="btn flex-1 justify-center sm:flex-none" onClick={() => engine.preview(build())}><Play size={13} />Preview Sound</button>
-              <button className="btn flex-1 justify-center sm:flex-none" onClick={() => onAddSound(build(), sn)}><Plus size={13} />Add to Timeline</button>
-              <button className="btn pri w-full justify-center sm:w-auto" disabled={!sn.trim()} onClick={() => onSaveSound({ id: crypto.randomUUID(), name: sn.trim(), p })}><Save size={13} />Save to My Library</button>
+              <Button variant="secondary" size="sm" onClick={() => engine.preview(build())}><Play size={14} /><span>Preview Sound</span></Button>
+              <Button variant="secondary" size="sm" onClick={() => onAddSound(build(), sn)}><Plus size={14} /><span>Tambah ke Timeline</span></Button>
+              <Button variant="primary" size="sm" disabled={!sn.trim()} onClick={() => onSaveSound({ id: crypto.randomUUID(), name: sn.trim(), p })}><Save size={14} /><span>Simpan ke Library</span></Button>
             </div>
           )}
         </div>

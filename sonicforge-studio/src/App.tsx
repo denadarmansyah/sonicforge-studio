@@ -8,6 +8,9 @@ import { ToastProvider } from './ui/primitives'
 const ExplorePage = lazy(() =>
   import('./pages/ExplorePage').then((m) => ({ default: m.ExplorePage }))
 )
+const PricingPage = lazy(() =>
+  import('./pages/PricingPage').then((m) => ({ default: m.PricingPage }))
+)
 const PublicProfilePage = lazy(() =>
   import('./pages/PublicProfilePage').then((m) => ({ default: m.PublicProfilePage }))
 )
@@ -71,6 +74,7 @@ export default function App() {
             <Routes>
               <Route path="/" element={<HomePage />} />
               <Route path="/explore" element={<ExplorePage />} />
+              <Route path="/pricing" element={<PricingPage />} />
               <Route path="/login" element={<AuthPage mode="login" />} />
               <Route path="/register" element={<AuthPage mode="register" />} />
               <Route path="/forgot-password" element={<AuthPage mode="forgot" />} />

@@ -33,7 +33,16 @@ import {
   YouTubeGlyph,
 } from './BrandIcons'
 import { Logo } from './Logo'
-import { Avatar, Badge, Button, EASE_SMOOTH, IconButton, Modal, ProgressiveImage } from './primitives'
+import {
+  Avatar,
+  Badge,
+  Button,
+  EASE_SMOOTH,
+  IconButton,
+  Modal,
+  ProgressiveImage,
+  UnstyledButton,
+} from './primitives'
 
 export function TemplateCard({
   template,
@@ -53,11 +62,10 @@ export function TemplateCard({
       layoutId={reduce ? undefined : `tpl-card-${template.id}`}
       className="group flex flex-col overflow-hidden rounded-2xl border border-edge bg-surface transition-all duration-200 [@media(hover:hover)]:hover:-translate-y-1 [@media(hover:hover)]:hover:border-fg-muted"
     >
-      <button
-        type="button"
+      <UnstyledButton
         onClick={() => onSelect?.(template)}
         aria-label={`Lihat detail template ${template.title}`}
-        className="relative block w-full cursor-pointer border-0 bg-transparent p-0 text-left focus-visible:outline-2 focus-visible:outline-accent"
+        className="relative block w-full border-0 bg-transparent p-0 text-left"
       >
         <ProgressiveImage
           src={template.thumbnail_url}
@@ -72,7 +80,7 @@ export function TemplateCard({
             <span className="truncate">{template.song_title}</span>
           </span>
         )}
-      </button>
+      </UnstyledButton>
 
       <div className="flex flex-1 flex-col justify-between p-3 sm:p-4">
         <div>
@@ -88,13 +96,12 @@ export function TemplateCard({
           )}
 
           <h3 className="m-0 text-[14px] sm:text-[15px] font-semibold leading-snug tracking-[-0.01em] text-fg">
-            <button
-              type="button"
+            <UnstyledButton
               onClick={() => onSelect?.(template)}
-              className="inline-flex min-h-11 w-full cursor-pointer items-start border-0 bg-transparent p-0 text-left text-inherit focus-visible:outline-1 focus-visible:outline-accent"
+              className="inline-flex min-h-11 w-full items-start border-0 bg-transparent p-0 text-left text-inherit"
             >
               <span className="line-clamp-2">{template.title}</span>
-            </button>
+            </UnstyledButton>
           </h3>
 
           {template.tags.length > 0 && (
@@ -210,17 +217,18 @@ export function TemplateDetailModal({
             )}
 
             {onReportTemplate && (
-              <button
-                type="button"
+              <Button
+                variant="ghost"
+                size="sm"
+                fullWidth
                 onClick={() => {
                   onClose()
                   onReportTemplate(template)
                 }}
-                className="inline-flex min-h-11 w-full cursor-pointer items-center justify-center gap-1.5 text-[12.5px] text-fg-sec [@media(hover:hover)]:hover:text-fg"
               >
                 <Flag size={13} />
                 <span>Laporkan template ini</span>
-              </button>
+              </Button>
             )}
           </div>
         </div>
@@ -697,15 +705,14 @@ export function PublicProfileRenderer({
 
             {!compactPreview && onShare && (
               <div className="mt-4 flex items-center gap-2">
-                <button
-                  type="button"
+                <UnstyledButton
                   onClick={onShare}
                   style={{ borderColor: theme.borderColor, color: theme.textSecColor }}
-                  className="inline-flex min-h-10 cursor-pointer items-center gap-1.5 rounded-full border bg-transparent px-3.5 text-[12px] font-medium [@media(hover:hover)]:hover:opacity-80"
+                  className="inline-flex min-h-10 items-center gap-1.5 rounded-full border bg-transparent px-3.5 text-[12px] font-medium [@media(hover:hover)]:hover:opacity-80"
                 >
                   <Share2 size={13} />
                   <span>Bagikan & QR</span>
-                </button>
+                </UnstyledButton>
               </div>
             )}
           </header>
@@ -733,20 +740,19 @@ export function PublicProfileRenderer({
                       }`}
                     >
                       {effPlan === 'pro' && grp ? (
-                        <button
-                          type="button"
+                        <UnstyledButton
                           onClick={() =>
                             setCollapsedGroups((p) => ({ ...p, [grp]: !p[grp] }))
                           }
                           style={{ color: theme.textColor, borderColor: theme.borderColor }}
-                          className="flex min-h-11 w-full cursor-pointer items-center justify-between border-b pb-1.5 text-left text-[13px] font-bold uppercase tracking-wider"
+                          className="flex min-h-11 w-full items-center justify-between border-b pb-1.5 text-left text-[13px] font-bold uppercase tracking-wider"
                         >
                           <span>{item.title}</span>
                           <ChevronDown
                             size={15}
                             className={`transition-transform ${isCollapsed ? '-rotate-90' : ''}`}
                           />
-                        </button>
+                        </UnstyledButton>
                       ) : (
                         <h2
                           style={{ color: theme.textSecColor }}
@@ -949,15 +955,14 @@ export function PublicProfileRenderer({
           {/* Unobtrusive Report Link */}
           {!compactPreview && onReportProfile && (
             <div className="mt-8 flex justify-center">
-              <button
-                type="button"
+              <UnstyledButton
                 onClick={onReportProfile}
                 style={{ color: theme.textSecColor }}
-                className="inline-flex min-h-10 cursor-pointer items-center gap-1.5 border-0 bg-transparent px-3 text-[12px] opacity-75 [@media(hover:hover)]:hover:opacity-100"
+                className="inline-flex min-h-10 items-center gap-1.5 border-0 bg-transparent px-3 text-[12px] opacity-75 [@media(hover:hover)]:hover:opacity-100"
               >
                 <Flag size={12} />
                 <span>Laporkan halaman ini</span>
-              </button>
+              </UnstyledButton>
             </div>
           )}
 

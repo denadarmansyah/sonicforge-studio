@@ -54,6 +54,29 @@ export function YouTubeGlyph({ size = 17 }: { size?: number }) {
   )
 }
 
+export function GoogleGlyph({ size = 16 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true">
+      <path
+        fill="currentColor"
+        d="M21.35 11.1H12v2.92h5.35c-.24 1.38-1.02 2.55-2.18 3.33v2.77h3.52c2.06-1.9 3.25-4.7 3.25-8.02 0-.67-.06-1.33-.19-2Z"
+      />
+      <path
+        fill="currentColor"
+        d="M12 22c2.97 0 5.46-.98 7.28-2.66l-3.52-2.77c-.98.66-2.24 1.06-3.76 1.06-2.89 0-5.34-1.95-6.21-4.57H2.15v2.87A9.99 9.99 0 0 0 12 22Z"
+      />
+      <path
+        fill="currentColor"
+        d="M5.79 13.06a6.03 6.03 0 0 1 0-3.84V6.35H2.15a10 10 0 0 0 0 9.58l3.64-2.87Z"
+      />
+      <path
+        fill="currentColor"
+        d="M12 5.65c1.62 0 3.07.56 4.21 1.65l3.15-3.15C17.45 2.39 14.97 1.28 12 1.28A9.99 9.99 0 0 0 2.15 6.35l3.64 2.87c.87-2.62 3.32-3.57 6.21-3.57Z"
+      />
+    </svg>
+  )
+}
+
 export function VerifiedBadgeIcon({ size = 16 }: { size?: number }) {
   return (
     <svg
@@ -74,33 +97,5 @@ export function VerifiedBadgeIcon({ size = 16 }: { size?: number }) {
         strokeLinejoin="round"
       />
     </svg>
-  )
-}
-
-export function HardwareKnob({
-  label,
-  valueLabel,
-  angle = 35,
-}: {
-  label: string
-  valueLabel: string
-  angle?: number
-}) {
-  return (
-    <div className="flex items-center gap-2.5 rounded-lg border border-edge bg-surface px-3 py-2">
-      <div
-        aria-hidden="true"
-        className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-edge bg-elevated"
-      >
-        <span
-          className="block h-3 w-0.5 origin-bottom -translate-y-1.5 rounded-full bg-accent"
-          style={{ transform: `rotate(${angle}deg) translateY(-5px)` }}
-        />
-      </div>
-      <div className="min-w-0">
-        <div className="font-mono text-[10px] uppercase tracking-wider text-fg-sec">{label}</div>
-        <div className="font-mono text-[12px] font-medium tabular-nums text-fg">{valueLabel}</div>
-      </div>
-    </div>
   )
 }

@@ -22,7 +22,17 @@ import {
   suggestAccessibleTextColor,
   THEME_PRESETS,
 } from '../lib/themeConfig'
-import { Badge, Button, Card, Input, Select, Slider, Tabs, useToast } from './primitives'
+import {
+  Badge,
+  Button,
+  Card,
+  Input,
+  Select,
+  Slider,
+  Tabs,
+  UnstyledButton,
+  useToast,
+} from './primitives'
 
 type StudioTab = 'presets' | 'colors' | 'shapes' | 'typo' | 'seo'
 
@@ -254,9 +264,8 @@ export function AppearanceStudio({
               const selected = theme.presetId === preset.id
               const locked = preset.proOnly && !isPro
               return (
-                <button
+                <UnstyledButton
                   key={preset.id}
-                  type="button"
                   onClick={() => {
                     if (locked) {
                       onRequirePro(`Tema ${preset.name}`)
@@ -264,7 +273,7 @@ export function AppearanceStudio({
                     }
                     onChangeTheme({ ...preset.theme })
                   }}
-                  className={`group flex cursor-pointer flex-col overflow-hidden rounded-xl border text-left transition-all ${
+                  className={`group flex flex-col overflow-hidden rounded-xl border text-left transition-all ${
                     selected ? 'border-2 border-fg' : 'border-edge [@media(hover:hover)]:hover:border-fg-sec'
                   }`}
                 >
@@ -312,7 +321,7 @@ export function AppearanceStudio({
                       {preset.proOnly ? 'Pro' : 'Free'} · {preset.group}
                     </span>
                   </div>
-                </button>
+                </UnstyledButton>
               )
             })}
           </div>
@@ -337,14 +346,14 @@ export function AppearanceStudio({
             {personalPresets.length > 0 && (
               <div className="mt-3 flex flex-wrap gap-2">
                 {personalPresets.map((pp) => (
-                  <button
+                  <Button
                     key={pp.id}
-                    type="button"
+                    variant="secondary"
+                    size="sm"
                     onClick={() => requireProOr('Gunakan Preset Pribadi', () => onChangeTheme({ ...pp.theme }))}
-                    className="min-h-9 cursor-pointer rounded-lg border border-edge bg-surface px-3 text-[12px] font-medium text-fg [@media(hover:hover)]:hover:border-fg"
                   >
-                    {pp.name}
-                  </button>
+                    <span>{pp.name}</span>
+                  </Button>
                 ))}
               </div>
             )}

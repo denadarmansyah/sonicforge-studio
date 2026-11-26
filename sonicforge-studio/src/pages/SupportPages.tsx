@@ -6,7 +6,16 @@ import { useDocumentMeta } from '../lib/seo'
 import { ADMIN_TIKTOK_HANDLE, ADMIN_TIKTOK_URL } from '../lib/supabaseClient'
 import { TikTokGlyph } from '../ui/BrandIcons'
 import { Logo } from '../ui/Logo'
-import { Button, Card, Input, LinkButton, Textarea, useToast } from '../ui/primitives'
+import {
+  Button,
+  Card,
+  EditorialIllustration,
+  ExternalLinkButton,
+  Input,
+  LinkButton,
+  Textarea,
+  useToast,
+} from '../ui/primitives'
 import { SiteLayout } from '../ui/SiteLayout'
 
 export function PrivacyPage() {
@@ -214,17 +223,15 @@ export function ContactPage() {
               <p className="mt-0.5 mb-0 font-mono text-[13px] text-fg-sec">{ADMIN_TIKTOK_HANDLE}</p>
             </div>
           </div>
-          <a
+          <ExternalLinkButton
             href={ADMIN_TIKTOK_URL}
-            target="_blank"
-            rel="noopener noreferrer"
+            variant="primary"
             aria-label="Buka profil TikTok resmi Luven @luvenindonesia"
-            className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl bg-fg px-5 text-[14px] font-semibold text-bg no-underline transition-colors [@media(hover:hover)]:hover:bg-accent-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fg"
           >
             <TikTokGlyph size={16} />
             <span>Buka TikTok</span>
             <ArrowUpRight size={15} />
-          </a>
+          </ExternalLinkButton>
         </Card>
 
         <Card className="mt-6 p-6 sm:p-8">
@@ -320,9 +327,16 @@ export function NotFoundPage() {
 
   return (
     <SiteLayout>
-      <div className="mx-auto max-w-[480px] px-4 py-20 text-center">
-        <div className="mb-5 flex justify-center text-fg">
-          <Logo variant="symbol" size={44} />
+      <div className="mx-auto max-w-[520px] px-4 py-16 text-center">
+        <EditorialIllustration
+          slug="error-404"
+          alt="Ilustrasi kabel jack audio terlepas dengan garis gelombang terputus"
+          ratio="16:9"
+          sizes="480px"
+          className="mb-6"
+        />
+        <div className="mb-4 flex justify-center text-fg">
+          <Logo variant="symbol" size={40} />
         </div>
         <span className="rounded-full border border-edge bg-surface px-3 py-1 font-mono text-[12px] text-fg-sec">
           ERROR 404

@@ -5,7 +5,7 @@ import { BillingCycle, PLANS } from '../config/plans'
 import { createMidtransCheckout } from '../lib/platformStore'
 import { ADMIN_TIKTOK_HANDLE, ADMIN_TIKTOK_URL } from '../lib/supabaseClient'
 import { TikTokGlyph } from './BrandIcons'
-import { Badge, Button, Modal, useToast } from './primitives'
+import { Badge, Button, ExternalLinkButton, Modal, useToast } from './primitives'
 
 export function UpgradeProModal({
   open,
@@ -59,18 +59,16 @@ export function UpgradeProModal({
             <Lock size={15} className="text-fg" />
             <span className="text-[13px] font-semibold text-fg">Pilih Siklus Paket Pro</span>
           </div>
-          <div className="inline-flex rounded-lg border border-edge bg-bg p-0.5">
+          <div className="inline-flex gap-1 rounded-lg border border-edge bg-bg p-1">
             {(['monthly', 'yearly'] as const).map((b) => (
-              <button
+              <Button
                 key={b}
-                type="button"
+                variant={billing === b ? 'primary' : 'ghost'}
+                size="sm"
                 onClick={() => setBilling(b)}
-                className={`min-h-9 cursor-pointer rounded-md px-3 font-mono text-[11.5px] transition-colors ${
-                  billing === b ? 'bg-fg text-bg font-semibold' : 'text-fg-sec'
-                }`}
               >
-                {b === 'monthly' ? 'Bulanan' : 'Tahunan'}
-              </button>
+                <span>{b === 'monthly' ? 'Bulanan' : 'Tahunan'}</span>
+              </Button>
             ))}
           </div>
         </div>
@@ -118,17 +116,16 @@ export function UpgradeProModal({
             <strong className="font-mono text-fg">{ADMIN_TIKTOK_HANDLE}</strong> dengan menyertakan username Luven Anda untuk aktivasi Pro secara langsung.
           </p>
           <div className="flex flex-col gap-2 sm:flex-row">
-            <a
+            <ExternalLinkButton
               href={ADMIN_TIKTOK_URL}
-              target="_blank"
-              rel="noopener noreferrer"
+              variant="primary"
               aria-label="Hubungi admin lewat TikTok @luvenindonesia untuk upgrade Pro"
-              className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-fg px-4 text-[13.5px] font-semibold text-bg no-underline transition-colors [@media(hover:hover)]:hover:bg-accent-hover"
+              className="flex-1"
             >
               <TikTokGlyph size={15} />
               <span>Hubungi {ADMIN_TIKTOK_HANDLE}</span>
               <ArrowUpRight size={14} />
-            </a>
+            </ExternalLinkButton>
             <Button variant="secondary" loading={busy} onClick={handleCheckout} className="flex-1">
               <span>Bayar Otomatis (Midtrans)</span>
             </Button>

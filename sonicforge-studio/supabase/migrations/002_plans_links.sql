@@ -68,14 +68,16 @@ begin
   end if;
 
   eff_plan := public.effective_plan(new.plan, new.plan_expires_at);
-  if eff_plan = 'free' then
-    preset_id := coalesce(new.theme ->> 'presetId', 'free-obsidian');
-    if preset_id not in ('free-obsidian', 'free-paper', 'free-slate') then
-      preset_id := 'free-obsidian';
-    end if;
-    new.theme := jsonb_build_object('presetId', preset_id);
-    if coalesce((new.settings ->> 'hideLuvenBranding')::boolean, false) then
-      new.settings := jsonb_set(coalesce(new.settings, '{}'::jsonb), '{hideLuvenBranding}', 'false'::jsonb, true);
+  if eff_plan = 'free' and (tg_op = 'INSERT' or new.theme is distinct from old.theme or new.settings is distinct from old.settings) then
+    if not private.is_admin() and coalesce(current_setting('request.jwt.claim.role', true), '') <> 'service_role' then
+      preset_id := coalesce(new.theme ->> 'presetId', 'free-obsidian');
+      if preset_id not in ('free-obsidian', 'free-paper', 'free-slate') then
+        preset_id := 'free-obsidian';
+      end if;
+      new.theme := jsonb_build_object('presetId', preset_id);
+      if coalesce((new.settings ->> 'hideLuvenBranding')::boolean, false) then
+        new.settings := jsonb_set(coalesce(new.settings, '{}'::jsonb), '{hideLuvenBranding}', 'false'::jsonb, true);
+      end if;
     end if;
   end if;
 

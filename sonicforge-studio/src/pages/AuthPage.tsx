@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { FormEvent, useEffect, useState } from 'react'
 import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { KeyRound, Lock, Mail, UserPlus } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
@@ -10,9 +10,17 @@ import {
   signUpWithEmail,
 } from '../lib/platformStore'
 import { useDocumentMeta } from '../lib/seo'
-import { isSupabaseConfigured } from '../lib/supabaseClient'
+import { getLiveSupabaseClient, isSupabaseConfigured } from '../lib/supabaseClient'
+import { GoogleGlyph } from '../ui/BrandIcons'
 import { Logo } from '../ui/Logo'
-import { Button, Card, Input, LinkButton, useToast } from '../ui/primitives'
+import {
+  Button,
+  Card,
+  EditorialIllustration,
+  Input,
+  LinkButton,
+  useToast,
+} from '../ui/primitives'
 import { SupabaseSetupPanel } from '../ui/ShareAndReportModals'
 import { SiteLayout } from '../ui/SiteLayout'
 
@@ -22,6 +30,9 @@ export function AuthPage({ mode }: { mode: 'login' | 'register' | 'forgot' }) {
   const location = useLocation()
   const { pushToast } = useToast()
 
+  const params = new URLSearchParams(location.search)
+  const isUpdatePassword = params.get('mode') === 'update-password'
+
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [busy, setBusy] = useState(false)
@@ -30,33 +41,44 @@ export function AuthPage({ mode }: { mode: 'login' | 'register' | 'forgot' }) {
   const [resetSent, setResetSent] = useState(false)
 
   useEffect(() => {
-    const params = new URLSearchParams(location.search)
-    const ref = params.get('ref')
+    const p = new URLSearchParams(location.search)
+    const ref = p.get('ref')
     if (ref) captureReferralCode(ref)
   }, [location.search])
 
   useDocumentMeta({
-    title:
-      mode === 'register'
+    title: isUpdatePassword
+      ? 'Simpan Kata Sandi Baru — Luven'
+      : mode === 'register'
         ? 'Daftar Kreator — Luven'
         : mode === 'forgot'
-        ? 'Atur Ulang Kata Sandi — Luven'
-        : 'Masuk Akun — Luven',
+          ? 'Atur Ulang Kata Sandi — Luven'
+          : 'Masuk Akun — Luven',
     description:
-      'Masuk atau buat halaman profil kreator TikTok & template CapCut Anda di Luven (luven.my.id).',
+      'Masuk atau buat halaman link-in-bio kreator TikTok & template CapCut kamu di Luven (luven.my.id).',
     path: location.pathname,
   })
 
-  if (user && !verifyNotice) {
+  if (user && !verifyNotice && !isUpdatePassword) {
     return <Navigate to={profile?.onboarding_completed ? '/dashboard' : '/onboarding'} replace />
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
     setError('')
     setBusy(true)
     try {
-      if (mode === 'forgot') {
+      if (isUpdatePassword) {
+        if (password.length < 8) {
+          throw new Error('Kata sandi baru minimal 8 karakter.')
+        }
+        const sb = getLiveSupabaseClient()
+        if (!sb) throw new Error('Koneksi Supabase belum aktif.')
+        const { error: upErr } = await sb.auth.updateUser({ password })
+        if (upErr) throw new Error(upErr.message)
+        pushToast('Kata sandi berhasil diperbarui.')
+        navigate('/dashboard', { replace: true })
+      } else if (mode === 'forgot') {
         await requestPasswordReset(email)
         setResetSent(true)
         pushToast('Instruksi pengaturan ulang kata sandi telah dikirim.')
@@ -66,7 +88,7 @@ export function AuthPage({ mode }: { mode: 'login' | 'register' | 'forgot' }) {
         if (res.needsEmailVerification) {
           setVerifyNotice(true)
         } else {
-          pushToast('Akun berhasil dibuat. Mari lengkapi profil Anda.')
+          pushToast('Akun berhasil dibuat. Mari lengkapi profil kamu.')
           navigate('/onboarding', { replace: true })
         }
       } else {
@@ -96,178 +118,204 @@ export function AuthPage({ mode }: { mode: 'login' | 'register' | 'forgot' }) {
       {!backendReady ? (
         <SupabaseSetupPanel />
       ) : (
-        <div className="mx-auto flex max-w-[440px] flex-col justify-center px-4 py-12 sm:py-16">
-          <Card className="p-6 sm:p-8">
-            <div className="mb-4 flex items-center justify-between">
-              <Logo variant="horizontal" size={104} className="text-fg" />
-              <span className="font-mono text-[11px] uppercase tracking-wider text-fg-sec">
-                {mode === 'register'
-                  ? 'Pendaftaran Kreator'
-                  : mode === 'forgot'
-                  ? 'Pemulihan Akses'
-                  : 'Akses Kreator'}
-              </span>
-            </div>
-            <h1 className="m-0 text-[24px] font-extrabold tracking-[-0.03em] text-fg">
-              {mode === 'register'
-                ? 'Buat halaman Luven kamu'
-                : mode === 'forgot'
-                ? 'Lupa kata sandi?'
-                : 'Masuk ke dasbor Luven'}
-            </h1>
-            <p className="mt-1.5 text-[13.5px] text-fg-sec">
-              {mode === 'register'
-                ? 'Siapkan link-in-bio khusus untuk mempromosikan akun TikTok dan template CapCut Anda.'
-                : mode === 'forgot'
-                ? 'Masukkan email terdaftar Anda untuk menerima tautan pemulihan kata sandi.'
-                : 'Kelola profil publik, urutan template CapCut, dan analitik klik Anda.'}
+        <div className="mx-auto grid max-w-[960px] grid-cols-1 items-center gap-8 px-4 py-12 sm:py-16 md:px-6 lg:grid-cols-12">
+          <div className="hidden lg:col-span-6 lg:block">
+            <EditorialIllustration
+              slug="auth-main"
+              alt="Ilustrasi kartu akses kreator berdampingan dengan profil ponsel dan headphone studio"
+              ratio="4:3"
+              sizes="460px"
+            />
+            <p className="mt-4 max-w-[44ch] text-[13.5px] leading-relaxed text-fg-sec">
+              Satu akun untuk mengelola halaman <span className="font-mono text-fg">luven.my.id/@username</span>, koleksi template CapCut, Studio Tampilan, dan Alat Audio Studio.
             </p>
+          </div>
 
-            {verifyNotice ? (
-              <div className="mt-6 rounded-xl border border-accent/40 bg-elevated p-4">
-                <h2 className="m-0 text-[15px] font-bold text-fg">Periksa kotak masuk email Anda</h2>
-                <p className="mt-1.5 text-[13.5px] leading-relaxed text-fg-sec">
-                  Kami telah mengirimkan tautan verifikasi ke <strong className="text-fg">{email}</strong>.
-                  Klik tautan tersebut untuk mengaktifkan akun dan melanjutkan pemilihan username.
-                </p>
-                <div className="mt-4">
-                  <LinkButton to="/login" variant="secondary" fullWidth>
-                    Kembali ke halaman Masuk
-                  </LinkButton>
-                </div>
+          <div className="mx-auto w-full max-w-[440px] lg:col-span-6">
+            <Card className="p-6 sm:p-8">
+              <div className="mb-4 flex items-center justify-between">
+                <Logo variant="horizontal" size={104} className="text-fg" />
+                <span className="font-mono text-[11px] uppercase tracking-wider text-fg-sec">
+                  {isUpdatePassword
+                    ? 'Sandi Baru'
+                    : mode === 'register'
+                      ? 'Pendaftaran'
+                      : mode === 'forgot'
+                        ? 'Pemulihan'
+                        : 'Akses Kreator'}
+                </span>
               </div>
-            ) : resetSent ? (
-              <div className="mt-6 rounded-xl border border-fg/40 bg-elevated p-4">
-                <p className="m-0 text-[13.5px] leading-relaxed text-fg">
-                  Jika alamat <strong className="font-mono">{email}</strong> terdaftar, tautan atur ulang kata sandi telah dikirimkan.
-                </p>
-                <div className="mt-4">
-                  <LinkButton to="/login" variant="secondary" fullWidth>
-                    Kembali ke Masuk
-                  </LinkButton>
+              <h1 className="m-0 text-[24px] font-extrabold tracking-[-0.03em] text-fg">
+                {isUpdatePassword
+                  ? 'Buat kata sandi baru'
+                  : mode === 'register'
+                    ? 'Buat halaman Luven kamu'
+                    : mode === 'forgot'
+                      ? 'Lupa kata sandi?'
+                      : 'Masuk ke dasbor Luven'}
+              </h1>
+              <p className="mt-1.5 text-[13.5px] text-fg-sec">
+                {isUpdatePassword
+                  ? 'Masukkan kata sandi baru minimal 8 karakter untuk akun kamu.'
+                  : mode === 'register'
+                    ? 'Siapkan halaman link-in-bio untuk akun TikTok dan template CapCut kamu.'
+                    : mode === 'forgot'
+                      ? 'Masukkan email terdaftar untuk menerima tautan pemulihan kata sandi.'
+                      : 'Kelola link bio, Studio Tampilan, template CapCut, dan analitik klik.'}
+              </p>
+
+              {verifyNotice ? (
+                <div className="mt-6 rounded-xl border border-accent/40 bg-elevated p-4">
+                  <h2 className="m-0 text-[15px] font-bold text-fg">Periksa kotak masuk email kamu</h2>
+                  <p className="mt-1.5 text-[13.5px] leading-relaxed text-fg-sec">
+                    Kami telah mengirimkan tautan verifikasi ke <strong className="text-fg">{email}</strong>.
+                    Klik tautan tersebut untuk mengaktifkan akun dan memilih username.
+                  </p>
+                  <div className="mt-4">
+                    <LinkButton to="/login" variant="secondary" fullWidth>
+                      Kembali ke halaman Masuk
+                    </LinkButton>
+                  </div>
                 </div>
-              </div>
-            ) : (
-              <form onSubmit={handleSubmit} noValidate className="mt-6 space-y-4">
-                {/* Honeypot anti-bot field */}
-                <input
-                  type="text"
-                  name="company_website_hp"
-                  tabIndex={-1}
-                  autoComplete="off"
-                  className="hidden"
-                  aria-hidden="true"
-                />
+              ) : resetSent ? (
+                <div className="mt-6 rounded-xl border border-fg/40 bg-elevated p-4">
+                  <p className="m-0 text-[13.5px] leading-relaxed text-fg">
+                    Jika alamat <strong className="font-mono">{email}</strong> terdaftar, tautan atur ulang kata sandi telah dikirimkan.
+                  </p>
+                  <div className="mt-4">
+                    <LinkButton to="/login" variant="secondary" fullWidth>
+                      Kembali ke Masuk
+                    </LinkButton>
+                  </div>
+                </div>
+              ) : (
+                <form onSubmit={handleSubmit} noValidate className="mt-6 space-y-4">
+                  <input
+                    type="text"
+                    name="company_website_hp"
+                    tabIndex={-1}
+                    autoComplete="off"
+                    className="hidden"
+                    aria-hidden="true"
+                  />
 
-                <Input
-                  type="email"
-                  label="Alamat Email"
-                  placeholder="nama@email.com"
-                  autoComplete="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  leftAddon={<Mail size={16} />}
-                  required
-                />
-
-                {mode !== 'forgot' && (
-                  <div>
+                  {!isUpdatePassword && (
                     <Input
-                      type="password"
-                      label="Kata Sandi"
-                      placeholder={mode === 'register' ? 'Minimal 8 karakter' : 'Kata sandi Anda'}
-                      autoComplete={mode === 'register' ? 'new-password' : 'current-password'}
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      leftAddon={<Lock size={16} />}
+                      type="email"
+                      label="Alamat Email"
+                      placeholder="nama@email.com"
+                      autoComplete="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      leftAddon={<Mail size={16} />}
                       required
                     />
-                    {mode === 'login' && (
-                      <div className="mt-1 text-right">
-                        <Link
-                          to="/forgot-password"
-                          className="inline-flex min-h-11 items-center px-1 text-[12.5px] text-fg-sec underline underline-offset-2 [@media(hover:hover)]:hover:text-fg"
-                        >
-                          Lupa kata sandi?
-                        </Link>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {error && (
-                  <p role="alert" className="rounded-xl border border-fg border-l-4 border-l-fg bg-bg px-3.5 py-2.5 text-[13px] font-medium text-fg">
-                    {error}
-                  </p>
-                )}
-
-                <Button type="submit" variant="primary" fullWidth loading={busy}>
-                  {mode === 'register' ? (
-                    <>
-                      <UserPlus size={16} />
-                      <span>Daftar & Pilih Username</span>
-                    </>
-                  ) : mode === 'forgot' ? (
-                    <>
-                      <KeyRound size={16} />
-                      <span>Kirim Tautan Pemulihan</span>
-                    </>
-                  ) : (
-                    <span>Masuk</span>
                   )}
-                </Button>
 
-                {mode !== 'forgot' && isSupabaseConfigured && (
-                  <>
-                    <div className="relative flex items-center py-1">
-                      <div className="flex-1 border-t border-edge" />
-                      <span className="px-3 font-mono text-[11px] uppercase text-fg-sec">atau</span>
-                      <div className="flex-1 border-t border-edge" />
+                  {(mode !== 'forgot' || isUpdatePassword) && (
+                    <div>
+                      <Input
+                        type="password"
+                        label={isUpdatePassword ? 'Kata Sandi Baru' : 'Kata Sandi'}
+                        placeholder={
+                          mode === 'register' || isUpdatePassword
+                            ? 'Minimal 8 karakter'
+                            : 'Kata sandi kamu'
+                        }
+                        autoComplete={
+                          mode === 'register' || isUpdatePassword
+                            ? 'new-password'
+                            : 'current-password'
+                        }
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        leftAddon={<Lock size={16} />}
+                        required
+                      />
+                      {mode === 'login' && !isUpdatePassword && (
+                        <div className="mt-1 text-right">
+                          <Link
+                            to="/forgot-password"
+                            className="inline-flex min-h-11 items-center px-1 text-[12.5px] text-fg-sec underline underline-offset-2 [@media(hover:hover)]:hover:text-fg"
+                          >
+                            Lupa kata sandi?
+                          </Link>
+                        </div>
+                      )}
                     </div>
-                    <Button variant="secondary" fullWidth onClick={handleGoogle}>
-                      <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
-                        <path
-                          fill="currentColor"
-                          d="M21.35 11.1H12v2.92h5.35c-.24 1.38-1.02 2.55-2.18 3.33v2.77h3.52c2.06-1.9 3.25-4.7 3.25-8.02 0-.67-.06-1.33-.19-2Z"
-                        />
-                        <path
-                          fill="currentColor"
-                          d="M12 22c2.97 0 5.46-.98 7.28-2.66l-3.52-2.77c-.98.66-2.24 1.06-3.76 1.06-2.89 0-5.34-1.95-6.21-4.57H2.15v2.87A9.99 9.99 0 0 0 12 22Z"
-                        />
-                        <path
-                          fill="currentColor"
-                          d="M5.79 13.06a6.03 6.03 0 0 1 0-3.84V6.35H2.15a10 10 0 0 0 0 9.58l3.64-2.87Z"
-                        />
-                        <path
-                          fill="currentColor"
-                          d="M12 5.65c1.62 0 3.07.56 4.21 1.65l3.15-3.15C17.45 2.39 14.97 1.28 12 1.28A9.99 9.99 0 0 0 2.15 6.35l3.64 2.87c.87-2.62 3.32-3.57 6.21-3.57Z"
-                        />
-                      </svg>
-                      <span>Masuk dengan Google</span>
-                    </Button>
+                  )}
+
+                  {error && (
+                    <p
+                      role="alert"
+                      className="rounded-xl border border-fg border-l-4 border-l-fg bg-bg px-3.5 py-2.5 text-[13px] font-medium text-fg"
+                    >
+                      {error}
+                    </p>
+                  )}
+
+                  <Button type="submit" variant="primary" fullWidth loading={busy}>
+                    {isUpdatePassword ? (
+                      <>
+                        <KeyRound size={16} />
+                        <span>Simpan Kata Sandi Baru</span>
+                      </>
+                    ) : mode === 'register' ? (
+                      <>
+                        <UserPlus size={16} />
+                        <span>Daftar & Pilih Username</span>
+                      </>
+                    ) : mode === 'forgot' ? (
+                      <>
+                        <KeyRound size={16} />
+                        <span>Kirim Tautan Pemulihan</span>
+                      </>
+                    ) : (
+                      <span>Masuk</span>
+                    )}
+                  </Button>
+
+                  {mode !== 'forgot' && !isUpdatePassword && isSupabaseConfigured && (
+                    <>
+                      <div className="relative flex items-center py-1">
+                        <div className="flex-1 border-t border-edge" />
+                        <span className="px-3 font-mono text-[11px] uppercase text-fg-sec">atau</span>
+                        <div className="flex-1 border-t border-edge" />
+                      </div>
+                      <Button variant="secondary" fullWidth onClick={handleGoogle}>
+                        <GoogleGlyph size={16} />
+                        <span>Masuk dengan Google</span>
+                      </Button>
+                    </>
+                  )}
+                </form>
+              )}
+
+              <div className="mt-6 border-t border-edge pt-4 text-center text-[13.5px] text-fg-sec">
+                {mode === 'register' ? (
+                  <>
+                    Sudah punya akun?{' '}
+                    <Link
+                      to="/login"
+                      className="font-semibold text-accent no-underline [@media(hover:hover)]:hover:underline"
+                    >
+                      Masuk di sini
+                    </Link>
+                  </>
+                ) : (
+                  <>
+                    Belum punya halaman kreator?{' '}
+                    <Link
+                      to="/register"
+                      className="font-semibold text-accent no-underline [@media(hover:hover)]:hover:underline"
+                    >
+                      Daftar gratis
+                    </Link>
                   </>
                 )}
-              </form>
-            )}
-
-            <div className="mt-6 border-t border-edge pt-4 text-center text-[13.5px] text-fg-sec">
-              {mode === 'register' ? (
-                <>
-                  Sudah punya akun?{' '}
-                  <Link to="/login" className="font-semibold text-accent no-underline [@media(hover:hover)]:hover:underline">
-                    Masuk di sini
-                  </Link>
-                </>
-              ) : (
-                <>
-                  Belum punya halaman kreator?{' '}
-                  <Link to="/register" className="font-semibold text-accent no-underline [@media(hover:hover)]:hover:underline">
-                    Daftar gratis
-                  </Link>
-                </>
-              )}
-            </div>
-          </Card>
+              </div>
+            </Card>
+          </div>
         </div>
       )}
     </SiteLayout>

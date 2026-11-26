@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Download, Loader2, Mic, MoreHorizontal, Pause, Play, Repeat, SkipBack, SlidersHorizontal, Square, Upload, X } from 'lucide-react'
+import { Download, Mic, MoreHorizontal, Pause, Play, Repeat, SkipBack, SlidersHorizontal, Square, Upload, X } from 'lucide-react'
 import { engine } from '../audio/audioEngine'
 import { fmt } from '../utils/format'
 import { EXPORT_FORMAT_OPTIONS, ExportFormat } from '../utils/audioExporter'
 import { Logo } from '../ui/Logo'
+import { Button, IconButton } from '../ui/primitives'
 import { LevelMeter } from './LevelMeter'
 
 interface Props {
@@ -46,13 +47,15 @@ export function TopBar(p: Props) {
           />
         </div>
 
-        {/* Transport Controls (Always Visible on All Viewports & Tabs) */}
+        {/* Transport Controls */}
         <div className="flex shrink-0 items-center gap-1 lg:gap-1.5">
-          <button className="btn sq" onClick={p.onStart} aria-label="Kembali ke awal"><SkipBack size={13} /></button>
-          <button className={`btn sq ${p.playing ? 'on' : ''}`} onClick={p.onPlay} aria-label={p.playing ? 'Jeda' : 'Putar'}>{p.playing ? <Pause size={13} /> : <Play size={13} />}</button>
-          <button className="btn sq" onClick={p.onStop} aria-label="Berhenti"><Square size={12} /></button>
-          <button className={`btn sq ${p.loop ? 'on' : ''}`} onClick={p.onLoop} aria-label="Ulangi"><Repeat size={13} /></button>
-          <div className="ml-1 hidden h-7 w-[92px] items-center justify-center rounded-[4px] border border-line bg-base font-mono text-[12px] tabular-nums min-[420px]:flex lg:ml-2 lg:w-[104px] lg:text-[13.5px]">
+          <IconButton size="sm" label="Kembali ke awal" onClick={p.onStart}><SkipBack size={14} /></IconButton>
+          <IconButton size="sm" active={p.playing} label={p.playing ? 'Jeda' : 'Putar'} onClick={p.onPlay}>
+            {p.playing ? <Pause size={14} /> : <Play size={14} />}
+          </IconButton>
+          <IconButton size="sm" label="Berhenti" onClick={p.onStop}><Square size={13} /></IconButton>
+          <IconButton size="sm" active={p.loop} label="Ulangi" onClick={p.onLoop}><Repeat size={14} /></IconButton>
+          <div className="ml-1 hidden h-8 w-[92px] items-center justify-center rounded-[10px] border border-line bg-base font-mono text-[12px] tabular-nums min-[420px]:flex lg:ml-2 lg:w-[104px] lg:text-[13px]">
             {fmt(p.pos)}
           </div>
         </div>
@@ -63,16 +66,16 @@ export function TopBar(p: Props) {
             <>
               <LevelMeter get={p.getRecLevel} w={52} />
               <span className="font-mono text-[12px] tabular-nums text-clip">{fmt(p.recElapsed)}</span>
-              <button className="btn on" onClick={p.onToggleRec}><Square size={12} />Berhenti</button>
+              <Button variant="primary" size="sm" onClick={p.onToggleRec}><Square size={13} /><span>Berhenti</span></Button>
             </>
           ) : (
-            <button className="btn" onClick={p.onToggleRec}><Mic size={13} />Rekam</button>
+            <Button variant="secondary" size="sm" onClick={p.onToggleRec}><Mic size={14} /><span>Rekam</span></Button>
           )}
           <div className="flex flex-col gap-1">
             <LevelMeter get={() => engine.level(0)} label="L" w={58} />
             <LevelMeter get={() => engine.level(1)} label="R" w={58} />
           </div>
-          <button className="btn" onClick={p.onBuilder}><SlidersHorizontal size={13} />Custom Builder</button>
+          <Button variant="secondary" size="sm" onClick={p.onBuilder}><SlidersHorizontal size={14} /><span>Custom Builder</span></Button>
           <select
             className="inp font-mono"
             value={p.exportFormat}
@@ -84,28 +87,28 @@ export function TopBar(p: Props) {
               <option key={opt.value} value={opt.value}>{opt.label}</option>
             ))}
           </select>
-          <button className="btn pri" onClick={p.onExport} disabled={p.busy}>
-            {p.busy ? <Loader2 size={13} className="animate-spin" /> : <Download size={13} />}
-            <span>Export</span>
-          </button>
+          <Button variant="primary" size="sm" loading={p.busy} onClick={p.onExport}>
+            <Download size={14} />
+            <span>Ekspor</span>
+          </Button>
         </div>
 
         {/* Mobile / Tablet (<1024px) Quick Record Stop + Overflow Tools Button */}
         <div className="flex shrink-0 items-center gap-1 lg:hidden">
           {p.rec && (
-            <button className="btn on px-2 font-mono tabular-nums" onClick={p.onToggleRec} aria-label="Berhenti rekam">
-              <Square size={11} />
-              <span>{fmt(p.recElapsed).slice(0, 5)}</span>
-            </button>
+            <Button variant="primary" size="sm" onClick={p.onToggleRec} aria-label="Berhenti rekam">
+              <Square size={12} />
+              <span className="font-mono tabular-nums">{fmt(p.recElapsed).slice(0, 5)}</span>
+            </Button>
           )}
-          <button
-            className="btn sq"
-            onClick={() => setToolsOpen(true)}
-            aria-label="Menu alat dan ekspor"
+          <IconButton
+            size="sm"
+            label="Menu alat dan ekspor"
             aria-expanded={toolsOpen}
+            onClick={() => setToolsOpen(true)}
           >
             <MoreHorizontal size={16} />
-          </button>
+          </IconButton>
         </div>
       </header>
 
@@ -120,7 +123,7 @@ export function TopBar(p: Props) {
             aria-modal="true"
             aria-label="Alat Studio dan Ekspor"
             onClick={(e) => e.stopPropagation()}
-            className="max-h-[88dvh] w-full overflow-y-auto rounded-t-2xl border border-line bg-panel p-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:max-w-[390px] sm:rounded-lg"
+            className="max-h-[88dvh] w-full overflow-y-auto rounded-t-2xl border border-line bg-panel p-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:max-w-[390px] sm:rounded-xl"
           >
             <div className="mb-3 flex items-center justify-between border-b border-line pb-2.5">
               <div className="flex items-center gap-2">
@@ -129,14 +132,13 @@ export function TopBar(p: Props) {
                   {fmt(p.pos)}
                 </span>
               </div>
-              <button className="btn sq" onClick={() => setToolsOpen(false)} aria-label="Tutup menu">
-                <X size={14} />
-              </button>
+              <IconButton size="sm" label="Tutup menu" onClick={() => setToolsOpen(false)}>
+                <X size={15} />
+              </IconButton>
             </div>
 
             <div className="space-y-3">
-              {/* Output Master Meters */}
-              <div className="flex items-center justify-between rounded-[4px] border border-line bg-base px-3 py-2">
+              <div className="flex items-center justify-between rounded-lg border border-line bg-base px-3 py-2">
                 <span className="text-[11px] text-sub">Level Master</span>
                 <div className="flex flex-col gap-1.5">
                   <LevelMeter get={() => engine.level(0)} label="L" w={104} />
@@ -144,47 +146,48 @@ export function TopBar(p: Props) {
                 </div>
               </div>
 
-              {/* Import, Record & Custom Builder */}
               <div className="grid grid-cols-2 gap-2">
-                <button
-                  className="btn justify-center"
+                <Button
+                  variant="secondary"
+                  size="sm"
                   onClick={() => {
                     setToolsOpen(false)
                     p.onOpenImport()
                   }}
                 >
-                  <Upload size={14} />Impor file
-                </button>
+                  <Upload size={14} /><span>Impor file</span>
+                </Button>
 
                 {p.rec ? (
-                  <button className="btn on justify-center" onClick={p.onToggleRec}>
-                    <Square size={12} />Berhenti ({fmt(p.recElapsed).slice(0, 5)})
-                  </button>
+                  <Button variant="primary" size="sm" onClick={p.onToggleRec}>
+                    <Square size={12} /><span>Berhenti ({fmt(p.recElapsed).slice(0, 5)})</span>
+                  </Button>
                 ) : (
-                  <button className="btn justify-center" onClick={p.onToggleRec}>
-                    <Mic size={14} />Rekam
-                  </button>
+                  <Button variant="secondary" size="sm" onClick={p.onToggleRec}>
+                    <Mic size={14} /><span>Rekam</span>
+                  </Button>
                 )}
               </div>
 
-              <button
-                className="btn w-full justify-center"
+              <Button
+                variant="secondary"
+                size="sm"
+                fullWidth
                 onClick={() => {
                   setToolsOpen(false)
                   p.onBuilder()
                 }}
               >
-                <SlidersHorizontal size={14} />Custom Builder
-              </button>
+                <SlidersHorizontal size={14} /><span>Custom Builder</span>
+              </Button>
 
               {p.rec && (
-                <div className="flex items-center justify-between rounded-[4px] border border-line bg-base px-3 py-2">
+                <div className="flex items-center justify-between rounded-lg border border-line bg-base px-3 py-2">
                   <span className="text-[11px] text-clip">Input mikrofon</span>
                   <LevelMeter get={p.getRecLevel} w={112} />
                 </div>
               )}
 
-              {/* Export Format + Export Button */}
               <div className="flex items-center gap-2 border-t border-line pt-3">
                 <select
                   className="inp font-mono"
@@ -197,17 +200,19 @@ export function TopBar(p: Props) {
                     <option key={opt.value} value={opt.value}>{opt.label}</option>
                   ))}
                 </select>
-                <button
-                  className="btn pri flex-1 justify-center"
+                <Button
+                  variant="primary"
+                  size="sm"
+                  loading={p.busy}
+                  className="flex-1"
                   onClick={() => {
                     setToolsOpen(false)
                     p.onExport()
                   }}
-                  disabled={p.busy}
                 >
-                  {p.busy ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />}
-                  <span>Export</span>
-                </button>
+                  <Download size={14} />
+                  <span>Ekspor</span>
+                </Button>
               </div>
             </div>
           </div>

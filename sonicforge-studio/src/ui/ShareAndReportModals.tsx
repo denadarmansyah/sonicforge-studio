@@ -226,13 +226,9 @@ export function SupabaseSetupPanel({ compact = false }: { compact?: boolean }) {
             <span className="h-2 w-2 rounded-full border border-dashed border-fg bg-fg/70" />
             Mode Sandbox Lokal Aktif (penyimpanan browser untuk pengujian sebelum variabel Supabase diisi)
           </span>
-          <button
-            type="button"
-            onClick={() => toggleSandbox(false)}
-            className="inline-flex min-h-11 cursor-pointer items-center px-2 font-mono text-[11.5px] text-accent underline underline-offset-2"
-          >
-            Matikan & Reset Sandbox
-          </button>
+          <Button variant="link" size="sm" onClick={() => toggleSandbox(false)}>
+            <span>Matikan & Reset Sandbox</span>
+          </Button>
         </div>
       </div>
     )

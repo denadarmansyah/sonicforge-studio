@@ -1,4 +1,5 @@
 import {
+  AnchorHTMLAttributes,
   ButtonHTMLAttributes,
   createContext,
   forwardRef,
@@ -20,9 +21,21 @@ import { AlertCircle, CheckCircle2, ChevronDown, Info, Loader2, X } from 'lucide
 export const EASE_SMOOTH: [number, number, number, number] = [0.22, 1, 0.36, 1]
 
 // ============================================================================
-// 1. BUTTON & ICON BUTTON (All interactive states + >=44px touch target)
+// 1. BUTTON, LINK BUTTON, EXTERNAL LINK BUTTON, & ICON BUTTON
+//    Single source of truth across the entire app (Rule B):
+//    - Heights: sm=32px (h-8), md=40px (h-10), lg=48px (h-12)
+//    - Touch area >=44x44px via expanded hit pseudo-element on sm/md
+//    - Radius: consistent 10px (rounded-[10px]), text 14px weight 500-600
+//    - Loading spinner keeps width fixed & prevents double-click
 // ============================================================================
-export type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger'
+export type ButtonVariant =
+  | 'primary'
+  | 'secondary'
+  | 'outline'
+  | 'ghost'
+  | 'destructive'
+  | 'danger'
+  | 'link'
 export type ButtonSize = 'sm' | 'md' | 'lg'
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
@@ -34,21 +47,45 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 
 const VARIANT_CLASSES: Record<ButtonVariant, string> = {
   primary:
+    'bg-fg text-bg border-fg font-semibold enabled:[@media(hover:hover)]:hover:bg-accent-hover enabled:[@media(hover:hover)]:hover:border-accent-hover',
+  secondary:
+    'bg-surface text-fg border-edge font-medium enabled:[@media(hover:hover)]:hover:bg-elevated enabled:[@media(hover:hover)]:hover:border-fg-sec',
+  outline:
+    'bg-transparent text-fg border-edge font-medium enabled:[@media(hover:hover)]:hover:bg-elevated enabled:[@media(hover:hover)]:hover:border-fg-sec',
+  ghost:
+    'bg-transparent text-fg-sec border-transparent font-medium enabled:[@media(hover:hover)]:hover:bg-elevated enabled:[@media(hover:hover)]:hover:text-fg',
+  destructive:
+    'bg-bg text-fg border-2 border-fg font-semibold enabled:[@media(hover:hover)]:hover:bg-fg enabled:[@media(hover:hover)]:hover:text-bg',
+  danger:
+    'bg-bg text-fg border-2 border-fg font-semibold enabled:[@media(hover:hover)]:hover:bg-fg enabled:[@media(hover:hover)]:hover:text-bg',
+  link:
+    'bg-transparent text-fg border-transparent font-medium underline-offset-4 enabled:[@media(hover:hover)]:hover:underline px-1!',
+}
+
+const ANCHOR_VARIANT_CLASSES: Record<ButtonVariant, string> = {
+  primary:
     'bg-fg text-bg border-fg font-semibold [@media(hover:hover)]:hover:bg-accent-hover [@media(hover:hover)]:hover:border-accent-hover',
   secondary:
-    'bg-elevated text-fg border-edge font-medium [@media(hover:hover)]:hover:border-fg-sec',
+    'bg-surface text-fg border-edge font-medium [@media(hover:hover)]:hover:bg-elevated [@media(hover:hover)]:hover:border-fg-sec',
   outline:
     'bg-transparent text-fg border-edge font-medium [@media(hover:hover)]:hover:bg-elevated [@media(hover:hover)]:hover:border-fg-sec',
   ghost:
     'bg-transparent text-fg-sec border-transparent font-medium [@media(hover:hover)]:hover:bg-elevated [@media(hover:hover)]:hover:text-fg',
+  destructive:
+    'bg-bg text-fg border-2 border-fg font-semibold [@media(hover:hover)]:hover:bg-fg [@media(hover:hover)]:hover:text-bg',
   danger:
-    'bg-bg text-fg border-2 border-fg/75 font-semibold [@media(hover:hover)]:hover:bg-fg [@media(hover:hover)]:hover:text-bg',
+    'bg-bg text-fg border-2 border-fg font-semibold [@media(hover:hover)]:hover:bg-fg [@media(hover:hover)]:hover:text-bg',
+  link:
+    'bg-transparent text-fg border-transparent font-medium underline-offset-4 [@media(hover:hover)]:hover:underline px-1!',
 }
 
+const TOUCH_HIT_AREA =
+  "relative before:content-[''] [@media(pointer:coarse)]:before:absolute [@media(pointer:coarse)]:before:inset-x-0 [@media(pointer:coarse)]:before:top-1/2 [@media(pointer:coarse)]:before:h-11 [@media(pointer:coarse)]:before:min-w-11 [@media(pointer:coarse)]:before:-translate-y-1/2"
+
 const SIZE_CLASSES: Record<ButtonSize, string> = {
-  sm: 'min-h-11 px-3.5 text-[13px] rounded-lg gap-2',
-  md: 'min-h-11 px-5 text-[14px] rounded-xl gap-2',
-  lg: 'min-h-12 px-6 text-[15px] rounded-xl gap-2.5',
+  sm: `h-8 px-3.5 text-[14px] rounded-[10px] gap-2 ${TOUCH_HIT_AREA}`,
+  md: `h-10 px-4 text-[14px] rounded-[10px] gap-2 ${TOUCH_HIT_AREA}`,
+  lg: 'h-12 px-6 text-[14px] rounded-[10px] gap-2',
 }
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button(
@@ -65,18 +102,22 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
   },
   ref
 ) {
+  const isDisabled = Boolean(disabled || loading)
   return (
     <button
       ref={ref}
       type={type}
-      disabled={disabled || loading}
-      className={`inline-flex cursor-pointer items-center justify-center border whitespace-nowrap transition-all duration-150 active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:pointer-events-none disabled:opacity-45 ${
+      disabled={isDisabled}
+      aria-busy={loading || undefined}
+      className={`inline-flex items-center justify-center border whitespace-nowrap select-none transition-[transform,background-color,border-color,color,opacity] duration-150 enabled:cursor-pointer enabled:active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-not-allowed disabled:opacity-45 ${
         VARIANT_CLASSES[variant]
       } ${SIZE_CLASSES[size]} ${fullWidth ? 'w-full' : ''} ${className}`}
       {...rest}
     >
-      {loading && <Loader2 size={16} className="shrink-0 animate-spin" />}
-      {children}
+      {loading && <Loader2 size={16} aria-hidden="true" className="absolute shrink-0 animate-spin" />}
+      <span className={`inline-flex items-center justify-center gap-2 ${loading ? 'opacity-0' : ''}`}>
+        {children}
+      </span>
     </button>
   )
 })
@@ -95,8 +136,8 @@ export function LinkButton({
 }) {
   return (
     <Link
-      className={`inline-flex cursor-pointer items-center justify-center border no-underline whitespace-nowrap transition-all duration-150 active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent ${
-        VARIANT_CLASSES[variant]
+      className={`inline-flex cursor-pointer items-center justify-center border no-underline whitespace-nowrap select-none transition-[transform,background-color,border-color,color,opacity] duration-150 active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent ${
+        ANCHOR_VARIANT_CLASSES[variant]
       } ${SIZE_CLASSES[size]} ${fullWidth ? 'w-full' : ''} ${className}`}
       {...rest}
     >
@@ -105,21 +146,98 @@ export function LinkButton({
   )
 }
 
+export function ExternalLinkButton({
+  variant = 'secondary',
+  size = 'md',
+  fullWidth = false,
+  className = '',
+  children,
+  href,
+  ...rest
+}: AnchorHTMLAttributes<HTMLAnchorElement> & {
+  variant?: ButtonVariant
+  size?: ButtonSize
+  fullWidth?: boolean
+  href: string
+}) {
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      className={`inline-flex cursor-pointer items-center justify-center border no-underline whitespace-nowrap select-none transition-[transform,background-color,border-color,color,opacity] duration-150 active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent ${
+        ANCHOR_VARIANT_CLASSES[variant]
+      } ${SIZE_CLASSES[size]} ${fullWidth ? 'w-full' : ''} ${className}`}
+      {...rest}
+    >
+      {children}
+    </a>
+  )
+}
+
 export const IconButton = forwardRef<
   HTMLButtonElement,
-  ButtonHTMLAttributes<HTMLButtonElement> & { label: string; active?: boolean }
->(function IconButton({ label, active = false, className = '', children, type = 'button', ...rest }, ref) {
+  ButtonHTMLAttributes<HTMLButtonElement> & {
+    label: string
+    active?: boolean
+    size?: ButtonSize
+    variant?: 'default' | 'ghost' | 'destructive'
+  }
+>(function IconButton(
+  {
+    label,
+    active = false,
+    size = 'md',
+    variant = 'default',
+    className = '',
+    children,
+    type = 'button',
+    ...rest
+  },
+  ref
+) {
+  const dim =
+    size === 'sm'
+      ? `h-8 w-8 ${TOUCH_HIT_AREA}`
+      : size === 'lg'
+        ? 'h-12 w-12'
+        : `h-10 w-10 ${TOUCH_HIT_AREA}`
+
+  const tone = active
+    ? 'border-fg bg-fg text-bg'
+    : variant === 'destructive'
+      ? 'border-2 border-fg bg-bg text-fg enabled:[@media(hover:hover)]:hover:bg-fg enabled:[@media(hover:hover)]:hover:text-bg'
+      : variant === 'ghost'
+        ? 'border-transparent bg-transparent text-fg-sec enabled:[@media(hover:hover)]:hover:bg-elevated enabled:[@media(hover:hover)]:hover:text-fg'
+        : 'border-edge bg-surface text-fg-sec enabled:[@media(hover:hover)]:hover:border-fg-sec enabled:[@media(hover:hover)]:hover:text-fg'
+
   return (
     <button
       ref={ref}
       type={type}
       aria-label={label}
       title={label}
-      className={`inline-flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-xl border transition-all duration-150 active:scale-[0.96] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:pointer-events-none disabled:opacity-45 ${
-        active
-          ? 'border-accent bg-elevated text-accent'
-          : 'border-edge bg-surface text-fg-sec [@media(hover:hover)]:hover:border-fg-sec [@media(hover:hover)]:hover:text-fg'
-      } ${className}`}
+      className={`inline-flex shrink-0 items-center justify-center rounded-[10px] border select-none transition-[transform,background-color,border-color,color,opacity] duration-150 enabled:cursor-pointer enabled:active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-not-allowed disabled:opacity-45 ${dim} ${tone} ${className}`}
+      {...rest}
+    >
+      {children}
+    </button>
+  )
+})
+
+/**
+ * Accessible trigger primitive for composite cards, theme swatches, and accordion headers
+ * where children define custom layout while keeping keyboard focus & disabled semantics uniform.
+ */
+export const UnstyledButton = forwardRef<
+  HTMLButtonElement,
+  ButtonHTMLAttributes<HTMLButtonElement>
+>(function UnstyledButton({ className = '', type = 'button', children, ...rest }, ref) {
+  return (
+    <button
+      ref={ref}
+      type={type}
+      className={`enabled:cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-not-allowed disabled:opacity-45 ${className}`}
       {...rest}
     >
       {children}
@@ -489,6 +607,88 @@ export function ProgressiveImage({
         </>
       )}
     </div>
+  )
+}
+
+const AVAILABLE_EDITORIAL_SLUGS = new Set([
+  'hero-main',
+  'pricing-hero',
+  'feature-template',
+])
+
+/**
+ * 2D Editorial PNG Illustration Renderer + Clean Fixed-Ratio Slot (Rule A).
+ * - Renders <picture>/<img> with @1x (800w) & @2x (1600w) PNG srcSet, sizes,
+ *   explicit width/height, lazy/eager + fetchPriority, decoding="async".
+ * - When an AI PNG file has not been generated yet (due to quota limits),
+ *   renders a clean, zero-CLS reserved slot frame with ZERO hand-coded shapes.
+ */
+export function EditorialIllustration({
+  slug,
+  alt,
+  ratio = '16:9',
+  sizes = '(max-width: 768px) 100vw, 640px',
+  priority = false,
+  className = '',
+}: {
+  slug: string
+  alt: string
+  ratio?: '16:9' | '16:10' | '20:9' | '4:3'
+  sizes?: string
+  priority?: boolean
+  className?: string
+}) {
+  const [failed, setFailed] = useState(!AVAILABLE_EDITORIAL_SLUGS.has(slug))
+  const [loaded, setLoaded] = useState(false)
+
+  const spec =
+    ratio === '16:10'
+      ? { w: 800, h: 500, aspect: 'aspect-[16/10]' }
+      : ratio === '20:9'
+        ? { w: 800, h: 360, aspect: 'aspect-[20/9]' }
+        : ratio === '4:3'
+          ? { w: 800, h: 600, aspect: 'aspect-[4/3]' }
+          : { w: 800, h: 450, aspect: 'aspect-video' }
+
+  const src1x = `/illustrations/${slug}-800.png`
+  const src2x = `/illustrations/${slug}-1600.png`
+
+  return (
+    <figure
+      className={`relative m-0 w-full overflow-hidden rounded-2xl border border-edge bg-surface ${spec.aspect} ${className}`}
+    >
+      {failed ? (
+        <div
+          role="img"
+          aria-label={alt}
+          className="flex h-full w-full flex-col items-center justify-center gap-1.5 bg-surface px-4 text-center"
+        >
+          <span className="rounded-md border border-edge bg-elevated px-2.5 py-1 font-mono text-[11px] text-fg-sec">
+            {slug}-800.png · {spec.w}×{spec.h}
+          </span>
+          <span className="max-w-[38ch] text-[12px] text-fg-muted">{alt}</span>
+        </div>
+      ) : (
+        <picture className="block h-full w-full">
+          <source srcSet={`${src1x} 800w, ${src2x} 1600w`} sizes={sizes} type="image/png" />
+          {!loaded && <span aria-hidden="true" className="absolute inset-0 animate-pulse bg-elevated" />}
+          <img
+            src={src1x}
+            alt={alt}
+            width={spec.w}
+            height={spec.h}
+            loading={priority ? 'eager' : 'lazy'}
+            fetchPriority={priority ? 'high' : undefined}
+            decoding="async"
+            onLoad={() => setLoaded(true)}
+            onError={() => setFailed(true)}
+            className={`h-full w-full object-cover transition-opacity duration-300 ${
+              loaded ? 'opacity-100' : 'opacity-0'
+            }`}
+          />
+        </picture>
+      )}
+    </figure>
   )
 }
 

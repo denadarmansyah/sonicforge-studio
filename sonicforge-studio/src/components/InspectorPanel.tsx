@@ -1,7 +1,8 @@
 import { ReactNode, useMemo, useState } from 'react'
-import { ChevronDown, Download, Loader2 } from 'lucide-react'
+import { ChevronDown, Download } from 'lucide-react'
 import { EqVisualizer } from './EqVisualizer'
 import { FX, Preset, Track } from '../types/audio'
+import { Button, UnstyledButton } from '../ui/primitives'
 import { EXPORT_FORMAT_OPTIONS, ExportFormat } from '../utils/audioExporter'
 
 export function Param({ label, v, min, max, step = 1, unit = '', dp = 0, on }: { label: string; v: number; min: number; max: number; step?: number; unit?: string; dp?: number; on: (n: number) => void }) {
@@ -23,15 +24,14 @@ function Section({ title, defaultOpen = true, children }: { title: string; defau
         {children}
       </div>
       <div className="xl:hidden">
-        <button
-          type="button"
+        <UnstyledButton
           aria-expanded={open}
           onClick={() => setOpen((v) => !v)}
-          className="flex min-h-8 w-full cursor-pointer items-center justify-between text-left text-[11.5px] font-semibold text-sub hover:text-ink"
+          className="flex min-h-8 w-full items-center justify-between text-left text-[11.5px] font-semibold text-sub hover:text-ink"
         >
           <span>{title}</span>
           <ChevronDown size={14} className={`transition-transform duration-150 ${open ? 'rotate-180' : ''}`} />
-        </button>
+        </UnstyledButton>
         {open && <div className="mt-2 space-y-1">{children}</div>}
       </div>
     </section>
@@ -70,9 +70,9 @@ export function InspectorPanel({
           <div className="space-y-1.5 lg:hidden">
             <span className="block text-[11px] font-semibold text-ink">Pilih track:</span>
             {tracks.map((t) => (
-              <button key={t.id} type="button" className="btn w-full justify-start" onClick={() => onSel(t.id)}>
-                {t.name}
-              </button>
+              <Button key={t.id} variant="secondary" size="sm" fullWidth onClick={() => onSel(t.id)} className="justify-start!">
+                <span>{t.name}</span>
+              </Button>
             ))}
           </div>
         )}
@@ -95,8 +95,8 @@ export function InspectorPanel({
           </select>
         ) : null}
         <span className={`min-w-0 flex-1 truncate font-semibold ${tracks.length > 1 && onSel ? 'hidden lg:inline' : ''}`}>{track.name}</span>
-        <button className={`btn ${fx.bypass ? 'on' : ''}`} onClick={() => onFx({ bypass: !fx.bypass })}>Bypass FX</button>
-        <button className="btn" onClick={onReset}>Reset</button>
+        <Button variant={fx.bypass ? 'primary' : 'secondary'} size="sm" onClick={() => onFx({ bypass: !fx.bypass })}><span>Bypass FX</span></Button>
+        <Button variant="secondary" size="sm" onClick={onReset}><span>Reset</span></Button>
       </div>
 
       {/* Single-Track Export Bar (WAV / MP3 with track FX applied) */}
@@ -112,15 +112,16 @@ export function InspectorPanel({
             <option key={opt.value} value={opt.value}>{opt.label}</option>
           ))}
         </select>
-        <button
-          type="button"
-          className="btn flex-1 justify-center"
-          disabled={busy}
+        <Button
+          variant="secondary"
+          size="sm"
+          loading={busy}
+          className="flex-1"
           onClick={() => onExportTrack(track, exportFormat)}
         >
-          {busy ? <Loader2 size={12} className="animate-spin" /> : <Download size={12} />}
+          <Download size={13} />
           <span>Ekspor track ini</span>
-        </button>
+        </Button>
       </div>
 
       <div className="min-h-0 flex-1 overflow-y-auto">

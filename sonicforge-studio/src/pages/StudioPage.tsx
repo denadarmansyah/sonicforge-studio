@@ -22,6 +22,7 @@ import { LibrarySidebar } from '../components/LibrarySidebar'
 import { TimelineWorkspace } from '../components/TimelineWorkspace'
 import { InspectorPanel } from '../components/InspectorPanel'
 import { CustomBuilderModal } from '../components/CustomBuilderModal'
+import { Button, UnstyledButton } from '../ui/primitives'
 
 function useLocal<T>(k: string, init: T): [T, (v: T) => void] {
   const [v, s] = useState<T>(() => { try { const x = localStorage.getItem(k); return x ? (JSON.parse(x) as T) : init } catch { return init } })
@@ -365,14 +366,14 @@ export function StudioPage() {
               <Loader2 size={13} className="shrink-0 animate-spin text-ink" />
               <span className="truncate text-[11.5px] font-medium text-ink">{task.label}</span>
             </div>
-            <button
-              type="button"
+            <Button
+              variant="secondary"
+              size="sm"
               onClick={cancelActiveTask}
-              className="btn h-6 min-h-[26px] shrink-0 px-2 text-[11px]"
             >
-              <X size={11} />
+              <X size={13} />
               <span>Batal</span>
-            </button>
+            </Button>
           </div>
           <div className="h-1.5 w-full overflow-hidden rounded-full bg-base border border-line">
             <div
@@ -397,21 +398,19 @@ export function StudioPage() {
         aria-label="Panel kerja studio"
         className="grid grid-cols-3 border-t border-line bg-panel pb-[env(safe-area-inset-bottom)] lg:hidden"
       >
-        <button
-          type="button"
+        <UnstyledButton
           onClick={() => setMobileTab('library')}
-          className={`studio-landscape-compact flex min-h-12 cursor-pointer items-center justify-center gap-1.5 border-t-2 text-[11.5px] font-medium transition-colors ${
+          className={`studio-landscape-compact flex min-h-12 items-center justify-center gap-1.5 border-t-2 text-[11.5px] font-medium transition-colors ${
             mobileTab === 'library' ? 'border-accent bg-raised text-ink' : 'border-transparent text-sub'
           }`}
         >
           <FolderOpen size={14} />
           <span>Library</span>
-        </button>
+        </UnstyledButton>
 
-        <button
-          type="button"
+        <UnstyledButton
           onClick={() => setMobileTab('timeline')}
-          className={`studio-landscape-compact flex min-h-12 cursor-pointer items-center justify-center gap-1.5 border-t-2 text-[11.5px] font-medium transition-colors ${
+          className={`studio-landscape-compact flex min-h-12 items-center justify-center gap-1.5 border-t-2 text-[11.5px] font-medium transition-colors ${
             mobileTab === 'timeline' ? 'border-accent bg-raised text-ink' : 'border-transparent text-sub'
           }`}
         >
@@ -422,19 +421,18 @@ export function StudioPage() {
               {tracks.length}
             </span>
           )}
-        </button>
+        </UnstyledButton>
 
-        <button
-          type="button"
+        <UnstyledButton
           onClick={() => setMobileTab('inspector')}
-          className={`studio-landscape-compact flex min-h-12 cursor-pointer items-center justify-center gap-1.5 border-t-2 text-[11.5px] font-medium transition-colors ${
+          className={`studio-landscape-compact flex min-h-12 items-center justify-center gap-1.5 border-t-2 text-[11.5px] font-medium transition-colors ${
             mobileTab === 'inspector' ? 'border-accent bg-raised text-ink' : 'border-transparent text-sub'
           }`}
         >
           <SlidersHorizontal size={14} />
           <span>Inspector</span>
           {track && <span className="h-1.5 w-1.5 rounded-full bg-accent" />}
-        </button>
+        </UnstyledButton>
       </nav>
 
       {builder && (

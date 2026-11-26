@@ -16,11 +16,20 @@ import { useAuth } from '../context/AuthContext'
 import { ADMIN_TIKTOK_HANDLE, ADMIN_TIKTOK_URL } from '../lib/supabaseClient'
 import { TikTokGlyph } from './BrandIcons'
 import { Logo } from './Logo'
-import { Avatar, Button, Dropdown, EASE_SMOOTH, IconButton, LinkButton } from './primitives'
+import {
+  Avatar,
+  Button,
+  Dropdown,
+  EASE_SMOOTH,
+  IconButton,
+  LinkButton,
+  UnstyledButton,
+} from './primitives'
 
 const NAV_LINKS = [
   { to: '/', label: 'Beranda' },
   { to: '/explore', label: 'Jelajah' },
+  { to: '/pricing', label: 'Harga' },
   { to: '/studio', label: 'Alat Studio', icon: AudioWaveform },
 ]
 
@@ -202,10 +211,9 @@ export function SiteLayout({
                 </LinkButton>
                 <Dropdown
                   trigger={
-                    <button
-                      type="button"
+                    <UnstyledButton
                       aria-label="Menu akun"
-                      className="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-full border border-edge bg-surface p-0.5 pr-3 transition-colors [@media(hover:hover)]:hover:border-fg-sec focus-visible:outline-2 focus-visible:outline-accent"
+                      className="inline-flex min-h-11 items-center gap-2 rounded-full border border-edge bg-surface p-0.5 pr-3 transition-colors [@media(hover:hover)]:hover:border-fg-sec"
                     >
                       <Avatar
                         src={profile?.avatar_url}
@@ -215,7 +223,7 @@ export function SiteLayout({
                       <span className="max-w-[120px] truncate font-mono text-[12px] text-fg">
                         {profile?.username ? `@${profile.username}` : user.email.split('@')[0]}
                       </span>
-                    </button>
+                    </UnstyledButton>
                   }
                   items={[
                     ...(profile?.username
@@ -430,6 +438,11 @@ export function SiteLayout({
                   <li>
                     <Link to="/explore" className="inline-flex min-h-11 items-center text-fg-sec no-underline [@media(hover:hover)]:hover:text-fg">
                       Jelajah Kreator
+                    </Link>
+                  </li>
+                  <li>
+                    <Link to="/pricing" className="inline-flex min-h-11 items-center text-fg-sec no-underline [@media(hover:hover)]:hover:text-fg">
+                      Harga & Paket
                     </Link>
                   </li>
                   <li>

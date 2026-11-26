@@ -6,7 +6,18 @@ import { useDocumentMeta } from '../lib/seo'
 import { CreatorTemplate, Profile } from '../lib/types'
 import { CREATOR_CATEGORIES, POPULAR_TEMPLATE_TAGS } from '../lib/validators'
 import { VerifiedBadgeIcon } from '../ui/BrandIcons'
-import { Avatar, Badge, Button, Card, Input, LinkButton, Select, Skeleton, Tabs } from '../ui/primitives'
+import {
+  Avatar,
+  Badge,
+  Button,
+  Card,
+  EditorialIllustration,
+  Input,
+  LinkButton,
+  Select,
+  Skeleton,
+  Tabs,
+} from '../ui/primitives'
 import { TemplateCard, TemplateDetailModal } from '../ui/ProfileViewCard'
 import { ReportModal, SupabaseSetupPanel } from '../ui/ShareAndReportModals'
 import { SiteLayout } from '../ui/SiteLayout'
@@ -182,19 +193,15 @@ export function ExplorePage() {
               {POPULAR_TEMPLATE_TAGS.map((t) => {
                 const on = tag === t
                 return (
-                  <button
+                  <Button
                     key={t}
-                    type="button"
+                    variant={on ? 'primary' : 'secondary'}
+                    size="sm"
                     onClick={() => setTag(on ? '' : t)}
-                    className={`inline-flex min-h-11 cursor-pointer items-center gap-1 rounded-full border px-3.5 font-mono text-[12px] transition-colors focus-visible:outline-2 focus-visible:outline-accent ${
-                      on
-                        ? 'border-accent bg-accent text-on-accent font-semibold'
-                        : 'border-edge bg-surface text-fg-sec [@media(hover:hover)]:hover:border-fg-sec [@media(hover:hover)]:hover:text-fg'
-                    }`}
                   >
-                    <span>#{t}</span>
-                    {on && <X size={12} />}
-                  </button>
+                    <span className="font-mono text-[12px]">#{t}</span>
+                    {on && <X size={13} />}
+                  </Button>
                 )
               })}
             </div>
@@ -212,6 +219,13 @@ export function ExplorePage() {
           ) : viewTab === 'templates' ? (
             templates.length === 0 ? (
               <Card className="mx-auto my-6 max-w-[520px] p-8 text-center">
+                <EditorialIllustration
+                  slug="empty-explore"
+                  alt="Ilustrasi kompas minimalis menatap cakrawala grid terbuka"
+                  ratio="16:9"
+                  sizes="440px"
+                  className="mb-5 rounded-xl bg-bg"
+                />
                 <h2 className="m-0 text-[18px] font-bold text-fg">
                   {q || category !== 'Semua' || tag
                     ? 'Tidak ada template yang sesuai filter'
