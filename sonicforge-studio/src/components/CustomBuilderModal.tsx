@@ -24,7 +24,7 @@ export function CustomBuilderModal({ fx, onClose, onSavePreset, onAddSound, onSa
   }, [onClose])
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 md:items-center md:p-4" onPointerDown={onClose}>
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-bg/80 md:items-center md:p-4" onPointerDown={onClose}>
       {/* Near-full-screen bottom sheet on HP (<768px), centered 520px dialog on desktop, sticky action footer */}
       <div
         role="dialog"

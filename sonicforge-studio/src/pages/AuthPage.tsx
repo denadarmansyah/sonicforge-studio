@@ -130,7 +130,7 @@ export function AuthPage({ mode }: { mode: 'login' | 'register' | 'forgot' }) {
                 </div>
               </div>
             ) : resetSent ? (
-              <div className="mt-6 rounded-xl border border-ok/40 bg-elevated p-4">
+              <div className="mt-6 rounded-xl border border-fg/40 bg-elevated p-4">
                 <p className="m-0 text-[13.5px] leading-relaxed text-fg">
                   Jika alamat <strong className="font-mono">{email}</strong> terdaftar, tautan atur ulang kata sandi telah dikirimkan.
                 </p>
@@ -189,7 +189,7 @@ export function AuthPage({ mode }: { mode: 'login' | 'register' | 'forgot' }) {
                 )}
 
                 {error && (
-                  <p role="alert" className="rounded-xl border border-err/40 bg-err/10 px-3.5 py-2.5 text-[13px] text-err">
+                  <p role="alert" className="rounded-xl border-2 border-fg bg-bg px-3.5 py-2.5 text-[13px] font-medium text-fg">
                     {error}
                   </p>
                 )}

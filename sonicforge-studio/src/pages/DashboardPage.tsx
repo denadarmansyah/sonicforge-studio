@@ -375,7 +375,7 @@ export function DashboardPage() {
                 </Button>
               )}
               <Button variant="secondary" size="sm" onClick={copyProfileUrl}>
-                {copied ? <Check size={15} className="text-ok" /> : <Copy size={15} />}
+                {copied ? <Check size={15} className="text-fg" /> : <Copy size={15} />}
                 <span>{copied ? 'Tersalin' : 'Salin Link'}</span>
               </Button>
               <Button variant="secondary" size="sm" onClick={() => setQrOpen(true)}>
@@ -521,7 +521,7 @@ export function DashboardPage() {
                             <Edit3 size={16} />
                           </IconButton>
                           <IconButton label="Hapus template" onClick={() => handleDeleteTemplate(tpl)}>
-                            <Trash2 size={16} className="text-err" />
+                            <Trash2 size={16} className="text-fg" />
                           </IconButton>
                         </div>
                       </Reorder.Item>
@@ -994,7 +994,7 @@ export function DashboardPage() {
               </div>
             </div>
 
-            {tplError && <p className="text-[13px] text-err">{tplError}</p>}
+            {tplError && <p role="alert" className="rounded-lg border-2 border-fg px-3 py-2 text-[13px] font-medium text-fg">{tplError}</p>}
 
             <div className="flex justify-end gap-2 pt-2">
               <Button variant="ghost" onClick={() => setTplModalOpen(false)}>

@@ -10,19 +10,19 @@ function cssVar(name: string, fallback: string): string {
 
 export const STUDIO_THEME = {
   get base() {
-    return cssVar('--color-bg', 'rgb(10, 10, 11)')
+    return cssVar('--color-bg', 'rgb(9, 9, 11)')
   },
   get panel() {
-    return cssVar('--color-surface', 'rgb(17, 17, 19)')
+    return cssVar('--color-surface', 'rgb(17, 17, 20)')
   },
   get raised() {
-    return cssVar('--color-elevated', 'rgb(23, 23, 26)')
+    return cssVar('--color-elevated', 'rgb(24, 24, 28)')
   },
   get line() {
-    return cssVar('--color-edge', 'rgb(38, 38, 43)')
+    return cssVar('--color-edge', 'rgb(39, 39, 42)')
   },
   get ink() {
-    return cssVar('--color-fg', 'rgb(245, 245, 244)')
+    return cssVar('--color-fg', 'rgb(250, 250, 250)')
   },
   get sub() {
     return cssVar('--color-fg-sec', 'rgb(161, 161, 170)')
@@ -31,21 +31,21 @@ export const STUDIO_THEME = {
     return cssVar('--color-fg-muted', 'rgb(113, 113, 122)')
   },
   get accent() {
-    return cssVar('--color-accent', 'rgb(198, 255, 61)')
+    return cssVar('--color-fg', 'rgb(250, 250, 250)')
   },
   get onAccent() {
-    return cssVar('--color-on-accent', 'rgb(10, 10, 11)')
+    return cssVar('--color-bg', 'rgb(9, 9, 11)')
   },
   get waveformActive() {
-    return cssVar('--color-fg', 'rgb(245, 245, 244)')
+    return cssVar('--color-fg', 'rgb(250, 250, 250)')
   },
   get waveformMuted() {
     return cssVar('--color-fg-muted', 'rgb(113, 113, 122)')
   },
   get meterNormal() {
-    return cssVar('--color-accent', 'rgb(198, 255, 61)')
+    return cssVar('--color-fg-sec', 'rgb(161, 161, 170)')
   },
   get meterClip() {
-    return cssVar('--color-fg', 'rgb(245, 245, 244)')
+    return cssVar('--color-fg', 'rgb(250, 250, 250)')
   },
 }

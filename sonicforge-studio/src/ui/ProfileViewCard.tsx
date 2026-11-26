@@ -41,6 +41,7 @@ export function TemplateCard({
           alt={`Thumbnail template ${template.title}`}
           ratio="4:5"
           fallbackLabel="TEMPLATE 4:5"
+          colorOnHover
         />
         {template.song_title && (
           <span className="absolute bottom-2.5 left-2.5 right-2.5 inline-flex max-w-[calc(100%-20px)] items-center gap-1.5 rounded-lg border border-edge bg-bg/90 px-2.5 py-1 font-mono text-[11px] text-fg backdrop-blur-xs">
@@ -50,7 +51,7 @@ export function TemplateCard({
         )}
       </button>
 
-      <div className="flex flex-1 flex-col justify-between p-4">
+      <div className="flex flex-1 flex-col justify-between p-3 sm:p-4">
         <div>
           {showCreator && template.owner && (
             <Link
@@ -92,11 +93,11 @@ export function TemplateCard({
           target="_blank"
           rel="noopener noreferrer nofollow ugc"
           onClick={() => onCapcutClick?.(template)}
-          className="mt-4 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-accent bg-accent px-4 text-[13.5px] font-semibold text-on-accent no-underline transition-colors duration-150 active:scale-[0.98] [@media(hover:hover)]:hover:bg-accent-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+          className="mt-3 sm:mt-4 inline-flex min-h-11 w-full items-center justify-center gap-1.5 sm:gap-2 rounded-xl border border-accent bg-accent px-2.5 sm:px-4 text-[12px] sm:text-[13.5px] font-semibold text-on-accent no-underline transition-colors duration-150 active:scale-[0.98] [@media(hover:hover)]:hover:bg-accent-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
         >
-          <CapCutGlyph size={15} />
-          <span>Pakai di CapCut</span>
-          <ArrowUpRight size={15} />
+          <CapCutGlyph size={14} />
+          <span className="truncate">Pakai di CapCut</span>
+          <ArrowUpRight size={14} className="shrink-0" />
         </a>
       </div>
     </motion.article>
@@ -418,12 +419,12 @@ export function PublicProfileRenderer({
           </div>
         ) : (
           <div
-            className={`grid gap-4 ${
+            className={`grid gap-3 sm:gap-4 ${
               compactPreview
-                ? 'grid-cols-1 sm:grid-cols-2'
+                ? 'grid-cols-2'
                 : templates.length === 1
                 ? 'grid-cols-1 sm:max-w-[340px]'
-                : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'
+                : 'grid-cols-2 lg:grid-cols-3'
             }`}
           >
             {templates.map((t) => (

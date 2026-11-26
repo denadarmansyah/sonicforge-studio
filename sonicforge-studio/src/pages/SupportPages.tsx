@@ -197,7 +197,7 @@ export function ContactPage() {
         <Card className="mt-8 p-6 sm:p-8">
           {sent ? (
             <div className="py-4 text-center">
-              <CheckCircle2 size={32} className="mx-auto text-ok" />
+              <CheckCircle2 size={32} className="mx-auto text-fg" />
               <h2 className="mt-3 text-[18px] font-bold text-fg">Pesan Terkirim</h2>
               <p className="mt-1.5 text-[14px] text-fg-sec">
                 Terima kasih telah menghubungi Luven. Kami akan membalas ke alamat email Anda secepatnya.
@@ -264,7 +264,7 @@ export function ContactPage() {
                 required
               />
 
-              {error && <p className="text-[13px] text-err">{error}</p>}
+              {error && <p role="alert" className="rounded-lg border-2 border-fg px-3 py-2 text-[13px] font-medium text-fg">{error}</p>}
 
               <Button type="submit" variant="primary" loading={sending}>
                 <Send size={15} />

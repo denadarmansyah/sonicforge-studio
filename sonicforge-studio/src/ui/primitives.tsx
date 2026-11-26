@@ -34,7 +34,7 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 
 const VARIANT_CLASSES: Record<ButtonVariant, string> = {
   primary:
-    'bg-accent text-on-accent border-accent font-semibold [@media(hover:hover)]:hover:bg-accent-hover [@media(hover:hover)]:hover:border-accent-hover',
+    'bg-fg text-bg border-fg font-semibold [@media(hover:hover)]:hover:bg-accent-hover [@media(hover:hover)]:hover:border-accent-hover',
   secondary:
     'bg-elevated text-fg border-edge font-medium [@media(hover:hover)]:hover:border-fg-sec',
   outline:
@@ -42,7 +42,7 @@ const VARIANT_CLASSES: Record<ButtonVariant, string> = {
   ghost:
     'bg-transparent text-fg-sec border-transparent font-medium [@media(hover:hover)]:hover:bg-elevated [@media(hover:hover)]:hover:text-fg',
   danger:
-    'bg-elevated text-err border-edge font-medium [@media(hover:hover)]:hover:border-err',
+    'bg-bg text-fg border-2 border-fg/75 font-semibold [@media(hover:hover)]:hover:bg-fg [@media(hover:hover)]:hover:text-bg',
 }
 
 const SIZE_CLASSES: Record<ButtonSize, string> = {
@@ -317,10 +317,10 @@ export function Badge({
 }) {
   const styles = {
     neutral: 'border-edge bg-elevated text-fg-sec',
-    accent: 'border-accent/40 bg-accent/12 text-accent',
-    ok: 'border-ok/35 bg-ok/10 text-ok',
-    warn: 'border-warn/35 bg-warn/10 text-warn',
-    err: 'border-err/35 bg-err/10 text-err',
+    accent: 'border-fg/40 bg-fg/10 text-fg',
+    ok: 'border-fg/50 bg-elevated text-fg',
+    warn: 'border-dashed border-fg-sec bg-elevated text-fg',
+    err: 'border-2 border-fg bg-bg text-fg font-semibold',
   }[variant]
 
   return (
@@ -423,7 +423,7 @@ export function Avatar({
           decoding="async"
           onLoad={() => setLoaded(true)}
           onError={() => setFailed(true)}
-          className={`h-full w-full object-cover transition-all duration-300 ${
+          className={`h-full w-full object-cover bw-media transition-all duration-300 ${
             loaded ? 'scale-100 opacity-100 blur-none' : 'scale-105 opacity-0 blur-sm'
           }`}
         />
@@ -438,6 +438,7 @@ export function ProgressiveImage({
   ratio = '4:5',
   fallbackLabel,
   priority = false,
+  colorOnHover = false,
   className = '',
 }: {
   src?: string | null
@@ -445,6 +446,7 @@ export function ProgressiveImage({
   ratio?: '1:1' | '4:5' | '3:1'
   fallbackLabel?: string
   priority?: boolean
+  colorOnHover?: boolean
   className?: string
 }) {
   const [loaded, setLoaded] = useState(false)
@@ -478,7 +480,9 @@ export function ProgressiveImage({
             decoding="async"
             onLoad={() => setLoaded(true)}
             onError={() => setFailed(true)}
-            className={`h-full w-full object-cover transition-all duration-300 ${
+            className={`h-full w-full object-cover bw-media ${
+              colorOnHover ? 'bw-media-reveal' : ''
+            } transition-all duration-300 ${
               loaded ? 'scale-100 opacity-100 blur-none' : 'scale-105 opacity-0 blur-md'
             }`}
           />
@@ -598,7 +602,7 @@ export function Dropdown({
                   item.onClick()
                 }}
                 className={`flex min-h-11 w-full cursor-pointer items-center gap-2.5 rounded-lg px-3 text-left text-[13.5px] transition-colors [@media(hover:hover)]:hover:bg-surface focus-visible:outline-2 focus-visible:outline-accent ${
-                  item.danger ? 'text-err' : 'text-fg'
+                  item.danger ? 'font-semibold text-fg' : 'text-fg'
                 }`}
               >
                 {item.icon}
@@ -734,11 +738,17 @@ export function ToastProvider({ children }: { children: ReactNode }) {
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 10, scale: 0.97 }}
               transition={{ duration: 0.22, ease: EASE_SMOOTH }}
-              className="pointer-events-auto flex w-full max-w-[380px] items-center gap-3 rounded-xl border border-edge bg-elevated px-4 py-3 text-[13.5px] text-fg shadow-xl"
+              className={`pointer-events-auto flex w-full max-w-[380px] items-center gap-3 rounded-xl bg-elevated px-4 py-3 text-[13.5px] text-fg ${
+                t.tone === 'err'
+                  ? 'border-2 border-fg'
+                  : t.tone === 'ok'
+                  ? 'border border-fg/45'
+                  : 'border border-edge'
+              }`}
             >
-              {t.tone === 'ok' && <CheckCircle2 size={17} className="shrink-0 text-ok" />}
-              {t.tone === 'err' && <AlertCircle size={17} className="shrink-0 text-err" />}
-              {t.tone === 'info' && <Info size={17} className="shrink-0 text-accent" />}
+              {t.tone === 'ok' && <CheckCircle2 size={17} className="shrink-0 text-fg" />}
+              {t.tone === 'err' && <AlertCircle size={17} className="shrink-0 text-fg" />}
+              {t.tone === 'info' && <Info size={17} className="shrink-0 text-fg-sec" />}
               <span className="min-w-0 flex-1 leading-snug">{t.message}</span>
               <button
                 type="button"

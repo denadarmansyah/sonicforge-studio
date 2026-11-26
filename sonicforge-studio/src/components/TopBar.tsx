@@ -108,7 +108,7 @@ export function TopBar(p: Props) {
       {/* Mobile / Tablet (<1024px) Overflow Tools & Export Bottom Sheet */}
       {toolsOpen && (
         <div
-          className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 sm:items-center sm:p-4 lg:hidden"
+          className="fixed inset-0 z-50 flex items-end justify-center bg-bg/80 sm:items-center sm:p-4 lg:hidden"
           onClick={() => setToolsOpen(false)}
         >
           <div

@@ -57,7 +57,7 @@ export function AdminPage() {
       <SiteLayout>
         <div className="mx-auto max-w-[480px] px-4 py-16">
           <Card className="p-8 text-center">
-            <ShieldAlert size={28} className="mx-auto text-err" />
+            <ShieldAlert size={28} className="mx-auto text-fg" />
             <h1 className="mt-3 text-[20px] font-bold text-fg">Akses Terbatas</h1>
             <p className="mt-2 text-[14px] text-fg-sec">
               Halaman ini hanya dapat diakses oleh akun administrator yang terdaftar di tabel{' '}

@@ -315,7 +315,7 @@ export function HomePage() {
         </div>
 
         {!feedLoaded ? (
-          <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="mt-8 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
             {Array.from({ length: 4 }).map((_, i) => (
               <div key={i} className="aspect-[4/5] animate-pulse rounded-2xl bg-surface" />
             ))}
@@ -362,7 +362,7 @@ export function HomePage() {
             )}
 
             {recentTemplates.length > 0 && (
-              <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+              <div className="grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-4">
                 {recentTemplates.map((tpl) => (
                   <TemplateCard
                     key={tpl.id}
@@ -429,7 +429,7 @@ export function HomePage() {
               <div className="mt-8 rounded-2xl border border-edge bg-surface p-4 font-mono text-[12px]">
                 <div className="flex items-center justify-between text-fg-sec">
                   <span>VALIDASI DOMAIN</span>
-                  <span className="text-ok">AKTIF</span>
+                  <span className="font-semibold text-fg">AKTIF</span>
                 </div>
                 <div className="mt-2 truncate rounded-lg border border-edge bg-bg px-3 py-2 text-fg">
                   https://www.capcut.com/t/...
@@ -519,11 +519,11 @@ export function HomePage() {
       </section>
 
       {/* =====================================================================
-          5. FAQ ACCORDION & CLOSING CTA
+          5. FAQ ACCORDION (Light Rhythm Section) & CLOSING CTA
           ===================================================================== */}
-      <section className="border-t border-edge bg-bg">
+      <section className="border-t border-light-edge bg-light-bg text-light-fg">
         <div className="mx-auto max-w-[840px] px-4 py-[clamp(3.5rem,6vw,6rem)] md:px-6">
-          <h2 className="text-center text-[clamp(1.625rem,3vw,2.25rem)] font-extrabold tracking-[-0.03em] text-fg">
+          <h2 className="text-center text-[clamp(1.625rem,3vw,2.25rem)] font-extrabold tracking-[-0.03em] text-light-fg">
             Pertanyaan Umum
           </h2>
 
@@ -533,19 +533,19 @@ export function HomePage() {
               return (
                 <div
                   key={item.q}
-                  className="overflow-hidden rounded-2xl border border-edge bg-surface"
+                  className="overflow-hidden rounded-2xl border border-light-edge bg-light-surface"
                 >
                   <button
                     type="button"
                     aria-expanded={isOpen}
                     onClick={() => setOpenFaq(isOpen ? null : idx)}
-                    className="flex min-h-14 w-full cursor-pointer items-center justify-between gap-4 px-5 py-4 text-left text-[15px] font-semibold text-fg focus-visible:outline-2 focus-visible:outline-accent"
+                    className="flex min-h-14 w-full cursor-pointer items-center justify-between gap-4 px-5 py-4 text-left text-[15px] font-semibold text-light-fg focus-visible:outline-2 focus-visible:outline-light-fg"
                   >
                     <span>{item.q}</span>
                     <ChevronDown
                       size={18}
-                      className={`shrink-0 text-fg-sec transition-transform duration-200 ${
-                        isOpen ? 'rotate-180 text-accent' : ''
+                      className={`shrink-0 text-light-sec transition-transform duration-200 ${
+                        isOpen ? 'rotate-180 text-light-fg' : ''
                       }`}
                     />
                   </button>
@@ -558,7 +558,7 @@ export function HomePage() {
                         transition={{ duration: 0.22, ease: EASE_SMOOTH }}
                         className="overflow-hidden"
                       >
-                        <p className="m-0 border-t border-edge px-5 py-4 text-[14px] leading-relaxed text-fg-sec">
+                        <p className="m-0 border-t border-light-edge px-5 py-4 text-[14px] leading-relaxed text-light-sec">
                           {item.a}
                         </p>
                       </motion.div>
@@ -569,7 +569,7 @@ export function HomePage() {
             })}
           </div>
 
-          <Card className="mt-12 flex flex-col items-center justify-between gap-5 p-7 text-center sm:flex-row sm:text-left">
+          <div className="mt-12 flex flex-col items-center justify-between gap-5 rounded-2xl border border-edge bg-bg p-7 text-center text-fg sm:flex-row sm:text-left">
             <div>
               <h3 className="m-0 text-[20px] font-extrabold tracking-[-0.02em] text-fg">
                 Siap merapikan tautan template kamu?
@@ -582,7 +582,7 @@ export function HomePage() {
               <span>Buat halaman kamu</span>
               <ArrowRight size={16} />
             </LinkButton>
-          </Card>
+          </div>
         </div>
       </section>
     </SiteLayout>

@@ -174,16 +174,16 @@ export function OnboardingPage() {
                     )}
                     {uStatus === 'ok' && (
                       <>
-                        <CheckCircle2 size={14} className="text-ok" />
-                        <span className="text-ok">{uMessage}</span>
+                        <CheckCircle2 size={14} className="text-fg" />
+                        <span className="font-medium text-fg">{uMessage}</span>
                       </>
                     )}
-                    {uStatus === 'err' && <span className="text-err">{uMessage}</span>}
+                    {uStatus === 'err' && <span className="font-medium underline decoration-dashed underline-offset-4 text-fg">{uMessage}</span>}
                   </div>
                 )}
               </div>
 
-              {formErr && <p className="text-[13px] text-err">{formErr}</p>}
+              {formErr && <p role="alert" className="rounded-lg border-2 border-fg px-3 py-2 text-[13px] font-medium text-fg">{formErr}</p>}
 
               <Button
                 variant="primary"
@@ -241,7 +241,7 @@ export function OnboardingPage() {
                 onChange={(e) => setBio(e.target.value)}
               />
 
-              {formErr && <p className="text-[13px] text-err">{formErr}</p>}
+              {formErr && <p role="alert" className="rounded-lg border-2 border-fg px-3 py-2 text-[13px] font-medium text-fg">{formErr}</p>}
 
               <div className="flex items-center gap-3">
                 <Button variant="secondary" onClick={() => setStep(1)}>
@@ -279,7 +279,7 @@ export function OnboardingPage() {
                 hint="Anda juga bisa menambahkan Instagram, YouTube, dan template CapCut di Dasbor setelah ini."
               />
 
-              {formErr && <p className="text-[13px] text-err">{formErr}</p>}
+              {formErr && <p role="alert" className="rounded-lg border-2 border-fg px-3 py-2 text-[13px] font-medium text-fg">{formErr}</p>}
 
               <div className="flex items-center gap-3">
                 <Button variant="secondary" onClick={() => setStep(2)}>

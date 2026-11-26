@@ -97,7 +97,7 @@ export function QrShareModal({
         <div className="mt-5 flex w-full items-center gap-2 rounded-xl border border-edge bg-bg p-1.5 pl-3.5">
           <span className="min-w-0 flex-1 truncate font-mono text-[12.5px] text-fg">{profileUrl}</span>
           <Button variant="secondary" size="sm" onClick={copyLink}>
-            {copied ? <Check size={15} className="text-ok" /> : <Copy size={15} />}
+            {copied ? <Check size={15} className="text-fg" /> : <Copy size={15} />}
             <span>{copied ? 'Tersalin' : 'Salin'}</span>
           </Button>
         </div>
@@ -181,7 +181,7 @@ export function ReportModal({
           onChange={(e) => setDetails(e.target.value)}
         />
 
-        {error && <p className="text-[13px] text-err">{error}</p>}
+        {error && <p role="alert" className="rounded-lg border-2 border-fg px-3 py-2 text-[13px] font-medium text-fg">{error}</p>}
 
         <div className="flex flex-col-reverse gap-2 pt-1 sm:flex-row sm:justify-end">
           <Button variant="ghost" onClick={onClose}>
@@ -219,7 +219,7 @@ export function SupabaseSetupPanel({ compact = false }: { compact?: boolean }) {
       <div className="border-b border-edge bg-elevated px-4 py-2 text-[12px] text-fg-sec">
         <div className="mx-auto flex max-w-[1280px] flex-wrap items-center justify-between gap-2">
           <span className="inline-flex items-center gap-2 font-mono">
-            <span className="h-2 w-2 rounded-full bg-warn" />
+            <span className="h-2 w-2 rounded-full border border-dashed border-fg bg-fg/70" />
             Mode Sandbox Lokal Aktif (penyimpanan browser untuk pengujian sebelum variabel Supabase diisi)
           </span>
           <button

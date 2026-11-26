@@ -2,43 +2,44 @@
 
 @theme {
   /* =========================================================================
-     LUVEN SINGLE SOURCE OF TRUTH DESIGN SYSTEM TOKENS
-     90% Neutral (#0A0A0B), 9% Surfaces (#111113 / #17171A), 1% Lime (#C6FF3D)
+     LUVEN SINGLE SOURCE OF TRUTH MONOCHROME DESIGN SYSTEM TOKENS
+     Pure Black & White (Zero chromatic hues, maximum contrast accents)
      ========================================================================= */
-  --color-bg: #0A0A0B;
-  --color-surface: #111113;
-  --color-elevated: #17171A;
-  --color-edge: #26262B;
-  --color-fg: #F5F5F4;
+  --color-bg: #09090B;
+  --color-surface: #111114;
+  --color-elevated: #18181C;
+  --color-edge: #27272A;
+  --color-fg: #FAFAFA;
   --color-fg-sec: #A1A1AA;
   --color-fg-muted: #71717A;
 
-  --color-accent: #C6FF3D;
-  --color-accent-hover: #D6FF70;
-  --color-on-accent: #0A0A0B;
+  --color-accent: #FAFAFA;
+  --color-accent-hover: #E4E4E7;
+  --color-on-accent: #09090B;
 
-  /* Status tokens (strictly for status & inline messages) */
-  --color-ok: #4ADE80;
-  --color-warn: #FBBF24;
-  --color-err: #F87171;
+  /* Monochrome status tokens (differentiated via icons, text, border width & pattern) */
+  --color-ok: #FAFAFA;
+  --color-warn: #D4D4D8;
+  --color-err: #FAFAFA;
 
-  /* Single High-Contrast Light Section Rhythm Tokens */
-  --color-light-bg: #F5F5F4;
-  --color-light-surface: #FFFFFF;
-  --color-light-edge: #DEDEE3;
-  --color-light-fg: #0A0A0B;
+  /* Light Contrast Section Tokens */
+  --color-light-bg: #FFFFFF;
+  --color-light-surface: #F4F4F5;
+  --color-light-edge: #E4E4E7;
+  --color-light-fg: #09090B;
   --color-light-sec: #52525B;
+  --color-light-muted: #71717A;
 
-  /* Studio (/studio) Unified Aliases */
-  --color-base: #0A0A0B;
-  --color-panel: #111113;
-  --color-raised: #17171A;
-  --color-line: #26262B;
-  --color-ink: #F5F5F4;
+  /* Studio (/studio) Unified Monochrome Aliases */
+  --color-base: #09090B;
+  --color-panel: #111114;
+  --color-raised: #18181C;
+  --color-line: #27272A;
+  --color-ink: #FAFAFA;
   --color-sub: #A1A1AA;
   --color-mute: #71717A;
   --color-sig: #A1A1AA;
-  --color-clip: #C6FF3D;
+  --color-clip: #FAFAFA;
 
   --font-sans: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
@@ -103,10 +104,21 @@ body {
 
 /* Custom Range Slider */
 .luven-slider {
-  accent-color: var(--color-accent);
+  accent-color: var(--color-fg);
   width: 100%;
   height: 28px;
   cursor: pointer;
+}
+
+/* Monochrome Media Filter (grayscale with subtle contrast; optional color reveal on hover devices) */
+.bw-media {
+  filter: grayscale(1) contrast(1.05);
+}
+
+@media (hover: hover) {
+  .group:hover .bw-media-reveal {
+    filter: grayscale(0) contrast(1);
+  }
 }
 
 /* =========================================================================

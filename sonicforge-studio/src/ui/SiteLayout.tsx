@@ -396,8 +396,8 @@ export function SiteLayout({
       {!hideFooter && (
         <footer className="border-t border-edge bg-surface">
           <div className="mx-auto max-w-[1280px] px-4 py-12 md:px-6 lg:px-8">
-            <div className="grid grid-cols-1 gap-8 md:grid-cols-12">
-              <div className="md:col-span-5">
+            <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 md:grid-cols-12">
+              <div className="sm:col-span-2 md:col-span-5">
                 <Logo variant="horizontal" size={128} className="text-fg" />
                 <p className="mt-3 max-w-[38ch] text-[14px] leading-relaxed text-fg-sec">
                   Halaman profil resmi dan direktori template untuk kreator TikTok serta CapCut di Indonesia.
@@ -408,7 +408,7 @@ export function SiteLayout({
                 </div>
               </div>
 
-              <div className="md:col-span-3">
+              <div className="sm:col-span-1 md:col-span-3">
                 <h2 className="font-mono text-[11px] font-semibold uppercase tracking-wider text-fg-sec">
                   Platform
                 </h2>
@@ -431,7 +431,7 @@ export function SiteLayout({
                 </ul>
               </div>
 
-              <div className="md:col-span-4">
+              <div className="sm:col-span-1 md:col-span-4">
                 <h2 className="font-mono text-[11px] font-semibold uppercase tracking-wider text-fg-sec">
                   Kebijakan & Bantuan
                 </h2>
