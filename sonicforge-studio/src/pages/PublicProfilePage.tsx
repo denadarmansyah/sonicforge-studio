@@ -58,7 +58,7 @@ export function PublicProfilePage({ username }: { username: string }) {
     <SiteLayout>
       <div className="mx-auto max-w-[880px] px-4 py-8 sm:py-10 md:px-6">
         {loading ? (
-          <div className="space-y-6">
+          <div className="min-h-[360px] space-y-6">
             <Skeleton className="h-56 w-full rounded-3xl" />
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
               <Skeleton className="aspect-[4/5] w-full rounded-2xl" />

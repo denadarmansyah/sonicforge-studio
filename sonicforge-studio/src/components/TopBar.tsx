@@ -31,8 +31,12 @@ export function TopBar(p: Props) {
         {/* Brand + Project Name */}
         <div className="flex min-w-0 flex-1 items-center gap-1.5 sm:gap-2 lg:flex-none lg:gap-3">
           <Link to="/" className="flex shrink-0 items-center text-ink no-underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent" title="Kembali ke Beranda Luven">
-            <Logo variant="symbol" size={22} className="min-[400px]:hidden" />
-            <Logo variant="horizontal" size={98} className="hidden min-[400px]:inline-block" />
+            <span className="inline-flex min-[400px]:hidden">
+              <Logo variant="symbol" size={22} />
+            </span>
+            <span className="hidden min-[400px]:inline-flex">
+              <Logo variant="horizontal" size={98} />
+            </span>
           </Link>
           <input
             className="inp min-w-0 flex-1 max-w-[140px] text-ellipsis px-1.5 text-[11px] sm:max-w-[180px] sm:px-2 sm:text-[12px] lg:w-36 lg:max-w-none xl:w-44"

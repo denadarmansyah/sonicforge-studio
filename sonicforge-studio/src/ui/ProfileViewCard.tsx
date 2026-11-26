@@ -64,13 +64,13 @@ export function TemplateCard({
             </Link>
           )}
 
-          <h3 className="m-0 line-clamp-2 text-[15px] font-semibold leading-snug tracking-[-0.01em] text-fg">
+          <h3 className="m-0 text-[14px] sm:text-[15px] font-semibold leading-snug tracking-[-0.01em] text-fg">
             <button
               type="button"
               onClick={() => onSelect?.(template)}
-              className="cursor-pointer border-0 bg-transparent p-0 text-left text-inherit focus-visible:outline-1 focus-visible:outline-accent"
+              className="inline-flex min-h-11 w-full cursor-pointer items-start border-0 bg-transparent p-0 text-left text-inherit focus-visible:outline-1 focus-visible:outline-accent"
             >
-              {template.title}
+              <span className="line-clamp-2">{template.title}</span>
             </button>
           </h3>
 
