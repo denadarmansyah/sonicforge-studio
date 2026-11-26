@@ -1,21 +1,76 @@
 import { lazy, Suspense } from 'react'
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
-import { LandingPage } from './pages/LandingPage'
+import { BrowserRouter, Route, Routes, useParams } from 'react-router-dom'
+import { AuthProvider } from './context/AuthContext'
+import { HomePage } from './pages/HomePage'
+import { ToastProvider } from './ui/primitives'
 
+const ExplorePage = lazy(() =>
+  import('./pages/ExplorePage').then((m) => ({ default: m.ExplorePage }))
+)
+const PublicProfilePage = lazy(() =>
+  import('./pages/PublicProfilePage').then((m) => ({ default: m.PublicProfilePage }))
+)
+const AuthPage = lazy(() =>
+  import('./pages/AuthPage').then((m) => ({ default: m.AuthPage }))
+)
+const OnboardingPage = lazy(() =>
+  import('./pages/OnboardingPage').then((m) => ({ default: m.OnboardingPage }))
+)
+const DashboardPage = lazy(() =>
+  import('./pages/DashboardPage').then((m) => ({ default: m.DashboardPage }))
+)
+const AdminPage = lazy(() =>
+  import('./pages/AdminPage').then((m) => ({ default: m.AdminPage }))
+)
 const StudioPage = lazy(() =>
   import('./pages/StudioPage').then((m) => ({ default: m.StudioPage }))
 )
+const PrivacyPage = lazy(() =>
+  import('./pages/SupportPages').then((m) => ({ default: m.PrivacyPage }))
+)
+const TermsPage = lazy(() =>
+  import('./pages/SupportPages').then((m) => ({ default: m.TermsPage }))
+)
+const ContactPage = lazy(() =>
+  import('./pages/SupportPages').then((m) => ({ default: m.ContactPage }))
+)
+const NotFoundPage = lazy(() =>
+  import('./pages/SupportPages').then((m) => ({ default: m.NotFoundPage }))
+)
+
+function HandleOrNotFoundRoute() {
+  const { handle = '' } = useParams<{ handle: string }>()
+  if (handle.startsWith('@') && handle.length > 1) {
+    return <PublicProfilePage username={handle.slice(1)} />
+  }
+  return <NotFoundPage />
+}
 
 export default function App() {
   return (
     <BrowserRouter>
-      <Suspense fallback={<div className="h-screen w-screen bg-[#09090B]" />}>
-        <Routes>
-          <Route path="/" element={<LandingPage />} />
-          <Route path="/studio" element={<StudioPage />} />
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </Suspense>
+      <AuthProvider>
+        <ToastProvider>
+          <Suspense fallback={<div className="min-h-dvh w-full bg-bg" />}>
+            <Routes>
+              <Route path="/" element={<HomePage />} />
+              <Route path="/explore" element={<ExplorePage />} />
+              <Route path="/login" element={<AuthPage mode="login" />} />
+              <Route path="/register" element={<AuthPage mode="register" />} />
+              <Route path="/forgot-password" element={<AuthPage mode="forgot" />} />
+              <Route path="/onboarding" element={<OnboardingPage />} />
+              <Route path="/dashboard" element={<DashboardPage />} />
+              <Route path="/admin" element={<AdminPage />} />
+              <Route path="/studio" element={<StudioPage />} />
+              <Route path="/privacy" element={<PrivacyPage />} />
+              <Route path="/terms" element={<TermsPage />} />
+              <Route path="/contact" element={<ContactPage />} />
+              <Route path="/:handle" element={<HandleOrNotFoundRoute />} />
+              <Route path="*" element={<NotFoundPage />} />
+            </Routes>
+          </Suspense>
+        </ToastProvider>
+      </AuthProvider>
     </BrowserRouter>
   )
 }

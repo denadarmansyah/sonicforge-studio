@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /dashboard
+Disallow: /onboarding
+Disallow: /admin
+
+Sitemap: https://luven.my.id/sitemap.xml

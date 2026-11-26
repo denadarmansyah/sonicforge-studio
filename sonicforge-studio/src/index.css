@@ -1,28 +1,47 @@
 @import "tailwindcss";
 
 @theme {
-  /* Studio Monochrome Tokens */
-  --color-base: #09090B;
-  --color-panel: #111114;
-  --color-raised: #18181C;
-  --color-line: #27272A;
-  --color-ink: #FAFAFA;
+  /* =========================================================================
+     LUVEN SINGLE SOURCE OF TRUTH DESIGN SYSTEM TOKENS
+     90% Neutral (#0A0A0B), 9% Surfaces (#111113 / #17171A), 1% Lime (#C6FF3D)
+     ========================================================================= */
+  --color-bg: #0A0A0B;
+  --color-surface: #111113;
+  --color-elevated: #17171A;
+  --color-edge: #26262B;
+  --color-fg: #F5F5F4;
+  --color-fg-sec: #A1A1AA;
+  --color-fg-muted: #71717A;
+
+  --color-accent: #C6FF3D;
+  --color-accent-hover: #D6FF70;
+  --color-on-accent: #0A0A0B;
+
+  /* Status tokens (strictly for status & inline messages) */
+  --color-ok: #4ADE80;
+  --color-warn: #FBBF24;
+  --color-err: #F87171;
+
+  /* Single High-Contrast Light Section Rhythm Tokens */
+  --color-light-bg: #F5F5F4;
+  --color-light-surface: #FFFFFF;
+  --color-light-edge: #DEDEE3;
+  --color-light-fg: #0A0A0B;
+  --color-light-sec: #52525B;
+
+  /* Studio (/studio) Unified Aliases */
+  --color-base: #0A0A0B;
+  --color-panel: #111113;
+  --color-raised: #17171A;
+  --color-line: #26262B;
+  --color-ink: #F5F5F4;
   --color-sub: #A1A1AA;
   --color-mute: #71717A;
-  --color-accent: #FAFAFA;
-  --color-sig: #D4D4D8;
-  --color-clip: #FFFFFF;
+  --color-sig: #A1A1AA;
+  --color-clip: #C6FF3D;
 
-  /* Luven Landing Page Tokens */
-  --color-luven-black: #0F0F10;
-  --color-luven-white: #FFFFFF;
-  --color-luven-gray: #F4F4F5;
-  --color-luven-border: #E4E4E7;
-  --color-luven-maroon: #5B1A2B;
-  --color-luven-maroon-hover: #702237;
-
-  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
-  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+  --font-sans: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
 }
 
 *, *::before, *::after {
@@ -31,6 +50,9 @@
 
 html {
   font-family: var(--font-sans);
+  background-color: var(--color-bg);
+  color: var(--color-fg);
+  color-scheme: dark;
   overflow-x: clip;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -38,13 +60,58 @@ html {
 
 body {
   margin: 0;
+  min-height: 100dvh;
+  background-color: var(--color-bg);
+  color: var(--color-fg);
   font-family: var(--font-sans);
   overflow-x: clip;
 }
 
-/* Studio Editor Scoped Base & Controls
-   >=1280px stays 100% identical to original desktop layout & dimensions;
-   <1024px enlarges touch targets & supports portrait + short landscape dvh */
+::selection {
+  background-color: var(--color-accent);
+  color: var(--color-on-accent);
+}
+
+/* Skip-to-content link */
+.skip-link {
+  position: fixed;
+  top: -120px;
+  left: 16px;
+  z-index: 100;
+  padding: 10px 16px;
+  border-radius: 8px;
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+  font-weight: 700;
+  font-size: 13px;
+  text-decoration: none;
+  transition: top 0.15s ease-out;
+}
+.skip-link:focus {
+  top: 16px;
+  outline: 2px solid var(--color-fg);
+  outline-offset: 2px;
+}
+
+/* Subtle Hardware Grid Texture (pure border token, zero neon/glow) */
+.hw-grid-bg {
+  background-image:
+    linear-gradient(to right, color-mix(in srgb, var(--color-edge) 42%, transparent) 1px, transparent 1px),
+    linear-gradient(to bottom, color-mix(in srgb, var(--color-edge) 42%, transparent) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+
+/* Custom Range Slider */
+.luven-slider {
+  accent-color: var(--color-accent);
+  width: 100%;
+  height: 28px;
+  cursor: pointer;
+}
+
+/* =========================================================================
+   STUDIO (/studio) SCOPED CONTROLS (Unified with Lime Hardware Design System)
+   ========================================================================= */
 .studio-shell {
   background: var(--color-base);
   color: var(--color-ink);
@@ -74,11 +141,9 @@ body {
   width: 8px;
   height: 8px;
 }
-
 .studio-shell ::-webkit-scrollbar-thumb {
   background: var(--color-line);
 }
-
 .studio-shell ::-webkit-scrollbar-corner {
   background: transparent;
 }
@@ -93,48 +158,43 @@ body {
   background: var(--color-raised);
   color: var(--color-ink);
   font-size: 12px;
-  border-radius: 4px;
-  transition: background-color .15s ease-out, border-color .15s ease-out, color .15s ease-out;
+  border-radius: 6px;
+  transition: background-color 0.15s ease-out, border-color 0.15s ease-out, color 0.15s ease-out;
   cursor: pointer;
   white-space: nowrap;
 }
 
 @media (hover: hover) {
   .btn:hover {
-    background: #222226;
+    background: color-mix(in srgb, var(--color-raised) 76%, var(--color-ink));
   }
   .btn.pri:hover {
-    background: #E4E4E7;
-    border-color: #E4E4E7;
+    background: var(--color-accent-hover);
+    border-color: var(--color-accent-hover);
   }
 }
 
 .btn:active {
   transform: translateY(1px);
 }
-
 .btn:focus-visible {
-  outline: 1px solid var(--color-accent);
+  outline: 2px solid var(--color-accent);
   outline-offset: 1px;
 }
-
 .btn:disabled {
-  opacity: .4;
+  opacity: 0.4;
   pointer-events: none;
 }
-
 .btn.on {
   border-color: var(--color-accent);
   color: var(--color-accent);
 }
-
 .btn.pri {
   background: var(--color-accent);
   border-color: var(--color-accent);
-  color: var(--color-base);
+  color: var(--color-on-accent);
   font-weight: 600;
 }
-
 .btn.sq {
   width: 24px;
   height: 24px;
@@ -144,16 +204,15 @@ body {
   font-size: 11px;
 }
 
-/* Touch-friendly sizing below 1024px while keeping >=1280px desktop identical */
 @media (max-width: 1023px) {
   .btn {
-    min-height: 36px;
+    min-height: 38px;
     padding: 0 12px;
   }
   .btn.sq {
-    width: 36px;
-    height: 36px;
-    min-height: 36px;
+    width: 38px;
+    height: 38px;
+    min-height: 38px;
     font-size: 12px;
   }
 }
@@ -162,17 +221,17 @@ body {
   height: 28px;
   background: var(--color-base);
   border: 1px solid var(--color-line);
-  border-radius: 4px;
+  border-radius: 6px;
   color: var(--color-ink);
   font-size: 12px;
   padding: 0 8px;
   outline: none;
-  transition: border-color .15s ease-out;
+  transition: border-color 0.15s ease-out;
 }
 
 @media (max-width: 1023px) {
   .inp {
-    min-height: 34px;
+    min-height: 36px;
   }
 }
 
@@ -180,7 +239,6 @@ body {
   border-color: var(--color-accent);
 }
 
-/* Short Landscape Phone Adaptation (<500px height on mobile/tablet) */
 @media (max-height: 500px) and (max-width: 1023px) {
   .studio-grid-responsive {
     grid-template-rows: 40px minmax(0, 1fr) 20px auto !important;
@@ -189,12 +247,9 @@ body {
     padding-top: 2px !important;
     padding-bottom: 2px !important;
   }
-  .studio-landscape-hide {
-    display: none !important;
-  }
 }
 
-/* Landing Page Lenis Smooth Scroll Support */
+/* Lenis Smooth Scroll Support (Desktop only) */
 html.lenis, html.lenis body {
   height: auto;
 }

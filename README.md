@@ -1,3 +1,3 @@
-# Luven
+# Luven (`luven.my.id`)
 
-Platform web modern untuk membuat, mengelola, dan mengekspor sound langsung di browser menggunakan Web Audio API (`/` untuk halaman utama dan `/studio` untuk editor audio).
+Lihat panduan setup lengkap Supabase, admin, variabel lingkungan, dan deployment Vercel pada [`sonicforge-studio/README.md`](./sonicforge-studio/README.md) serta skema SQL lengkap pada [`supabase/schema.sql`](./supabase/schema.sql).

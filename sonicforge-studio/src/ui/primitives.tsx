@@ -1,0 +1,761 @@
+import {
+  ButtonHTMLAttributes,
+  createContext,
+  forwardRef,
+  InputHTMLAttributes,
+  ReactNode,
+  SelectHTMLAttributes,
+  TextareaHTMLAttributes,
+  useCallback,
+  useContext,
+  useEffect,
+  useId,
+  useRef,
+  useState,
+} from 'react'
+import { Link, LinkProps } from 'react-router-dom'
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
+import { AlertCircle, CheckCircle2, ChevronDown, Info, Loader2, X } from 'lucide-react'
+
+export const EASE_SMOOTH: [number, number, number, number] = [0.22, 1, 0.36, 1]
+
+// ============================================================================
+// 1. BUTTON & ICON BUTTON (All interactive states + >=44px touch target)
+// ============================================================================
+export type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger'
+export type ButtonSize = 'sm' | 'md' | 'lg'
+
+interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
+  variant?: ButtonVariant
+  size?: ButtonSize
+  loading?: boolean
+  fullWidth?: boolean
+}
+
+const VARIANT_CLASSES: Record<ButtonVariant, string> = {
+  primary:
+    'bg-accent text-on-accent border-accent font-semibold [@media(hover:hover)]:hover:bg-accent-hover [@media(hover:hover)]:hover:border-accent-hover',
+  secondary:
+    'bg-elevated text-fg border-edge font-medium [@media(hover:hover)]:hover:border-fg-sec',
+  outline:
+    'bg-transparent text-fg border-edge font-medium [@media(hover:hover)]:hover:bg-elevated [@media(hover:hover)]:hover:border-fg-sec',
+  ghost:
+    'bg-transparent text-fg-sec border-transparent font-medium [@media(hover:hover)]:hover:bg-elevated [@media(hover:hover)]:hover:text-fg',
+  danger:
+    'bg-elevated text-err border-edge font-medium [@media(hover:hover)]:hover:border-err',
+}
+
+const SIZE_CLASSES: Record<ButtonSize, string> = {
+  sm: 'min-h-11 px-3.5 text-[13px] rounded-lg gap-2',
+  md: 'min-h-11 px-5 text-[14px] rounded-xl gap-2',
+  lg: 'min-h-12 px-6 text-[15px] rounded-xl gap-2.5',
+}
+
+export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button(
+  {
+    variant = 'primary',
+    size = 'md',
+    loading = false,
+    fullWidth = false,
+    disabled,
+    className = '',
+    children,
+    type = 'button',
+    ...rest
+  },
+  ref
+) {
+  return (
+    <button
+      ref={ref}
+      type={type}
+      disabled={disabled || loading}
+      className={`inline-flex cursor-pointer items-center justify-center border whitespace-nowrap transition-all duration-150 active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:pointer-events-none disabled:opacity-45 ${
+        VARIANT_CLASSES[variant]
+      } ${SIZE_CLASSES[size]} ${fullWidth ? 'w-full' : ''} ${className}`}
+      {...rest}
+    >
+      {loading && <Loader2 size={16} className="shrink-0 animate-spin" />}
+      {children}
+    </button>
+  )
+})
+
+export function LinkButton({
+  variant = 'primary',
+  size = 'md',
+  fullWidth = false,
+  className = '',
+  children,
+  ...rest
+}: LinkProps & {
+  variant?: ButtonVariant
+  size?: ButtonSize
+  fullWidth?: boolean
+}) {
+  return (
+    <Link
+      className={`inline-flex cursor-pointer items-center justify-center border no-underline whitespace-nowrap transition-all duration-150 active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent ${
+        VARIANT_CLASSES[variant]
+      } ${SIZE_CLASSES[size]} ${fullWidth ? 'w-full' : ''} ${className}`}
+      {...rest}
+    >
+      {children}
+    </Link>
+  )
+}
+
+export const IconButton = forwardRef<
+  HTMLButtonElement,
+  ButtonHTMLAttributes<HTMLButtonElement> & { label: string; active?: boolean }
+>(function IconButton({ label, active = false, className = '', children, type = 'button', ...rest }, ref) {
+  return (
+    <button
+      ref={ref}
+      type={type}
+      aria-label={label}
+      title={label}
+      className={`inline-flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-xl border transition-all duration-150 active:scale-[0.96] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:pointer-events-none disabled:opacity-45 ${
+        active
+          ? 'border-accent bg-elevated text-accent'
+          : 'border-edge bg-surface text-fg-sec [@media(hover:hover)]:hover:border-fg-sec [@media(hover:hover)]:hover:text-fg'
+      } ${className}`}
+      {...rest}
+    >
+      {children}
+    </button>
+  )
+})
+
+// ============================================================================
+// 2. INPUT, TEXTAREA, SELECT, SLIDER
+// ============================================================================
+interface FieldShellProps {
+  label?: string
+  hint?: string
+  error?: string
+  rightMeta?: string
+  id: string
+  children: ReactNode
+}
+
+function FieldShell({ label, hint, error, rightMeta, id, children }: FieldShellProps) {
+  return (
+    <div className="w-full">
+      {(label || rightMeta) && (
+        <div className="mb-1.5 flex items-center justify-between gap-2">
+          {label && (
+            <label htmlFor={id} className="text-[13px] font-medium text-fg">
+              {label}
+            </label>
+          )}
+          {rightMeta && <span className="font-mono text-[11px] tabular-nums text-fg-sec">{rightMeta}</span>}
+        </div>
+      )}
+      {children}
+      {error ? (
+        <p role="alert" className="mt-1.5 flex items-center gap-1.5 text-[12.5px] text-err">
+          <AlertCircle size={13} className="shrink-0" />
+          <span>{error}</span>
+        </p>
+      ) : hint ? (
+        <p className="mt-1.5 text-[12px] text-fg-sec">{hint}</p>
+      ) : null}
+    </div>
+  )
+}
+
+export const Input = forwardRef<
+  HTMLInputElement,
+  InputHTMLAttributes<HTMLInputElement> & {
+    label?: string
+    hint?: string
+    error?: string
+    rightMeta?: string
+    leftAddon?: ReactNode
+  }
+>(function Input({ label, hint, error, rightMeta, leftAddon, className = '', id, ...rest }, ref) {
+  const autoId = useId()
+  const fieldId = id || autoId
+  return (
+    <FieldShell label={label} hint={hint} error={error} rightMeta={rightMeta} id={fieldId}>
+      <div className="relative flex items-center">
+        {leftAddon && (
+          <span className="pointer-events-none absolute left-3.5 flex items-center text-fg-sec">
+            {leftAddon}
+          </span>
+        )}
+        <input
+          ref={ref}
+          id={fieldId}
+          aria-invalid={Boolean(error)}
+          className={`min-h-11 w-full rounded-xl border bg-bg px-3.5 text-[14px] text-fg placeholder-fg-muted outline-none transition-colors duration-150 focus-visible:border-accent disabled:opacity-50 ${
+            leftAddon ? 'pl-10' : ''
+          } ${error ? 'border-err' : 'border-edge'} ${className}`}
+          {...rest}
+        />
+      </div>
+    </FieldShell>
+  )
+})
+
+export const Textarea = forwardRef<
+  HTMLTextAreaElement,
+  TextareaHTMLAttributes<HTMLTextAreaElement> & {
+    label?: string
+    hint?: string
+    error?: string
+    rightMeta?: string
+  }
+>(function Textarea({ label, hint, error, rightMeta, className = '', id, rows = 3, ...rest }, ref) {
+  const autoId = useId()
+  const fieldId = id || autoId
+  return (
+    <FieldShell label={label} hint={hint} error={error} rightMeta={rightMeta} id={fieldId}>
+      <textarea
+        ref={ref}
+        id={fieldId}
+        rows={rows}
+        aria-invalid={Boolean(error)}
+        className={`w-full rounded-xl border bg-bg p-3.5 text-[14px] leading-relaxed text-fg placeholder-fg-muted outline-none transition-colors duration-150 focus-visible:border-accent disabled:opacity-50 ${
+          error ? 'border-err' : 'border-edge'
+        } ${className}`}
+        {...rest}
+      />
+    </FieldShell>
+  )
+})
+
+export const Select = forwardRef<
+  HTMLSelectElement,
+  SelectHTMLAttributes<HTMLSelectElement> & {
+    label?: string
+    hint?: string
+    error?: string
+  }
+>(function Select({ label, hint, error, className = '', id, children, ...rest }, ref) {
+  const autoId = useId()
+  const fieldId = id || autoId
+  return (
+    <FieldShell label={label} hint={hint} error={error} id={fieldId}>
+      <div className="relative">
+        <select
+          ref={ref}
+          id={fieldId}
+          aria-invalid={Boolean(error)}
+          className={`min-h-11 w-full appearance-none rounded-xl border bg-bg pl-3.5 pr-9 text-[14px] text-fg outline-none transition-colors duration-150 focus-visible:border-accent disabled:opacity-50 ${
+            error ? 'border-err' : 'border-edge'
+          } ${className}`}
+          {...rest}
+        >
+          {children}
+        </select>
+        <ChevronDown
+          size={16}
+          aria-hidden="true"
+          className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-fg-sec"
+        />
+      </div>
+    </FieldShell>
+  )
+})
+
+export function Slider({
+  label,
+  value,
+  min,
+  max,
+  step = 1,
+  unit = '',
+  onChange,
+}: {
+  label: string
+  value: number
+  min: number
+  max: number
+  step?: number
+  unit?: string
+  onChange: (n: number) => void
+}) {
+  const id = useId()
+  return (
+    <div className="space-y-1">
+      <div className="flex items-center justify-between text-[12.5px]">
+        <label htmlFor={id} className="text-fg-sec">
+          {label}
+        </label>
+        <span className="font-mono tabular-nums text-fg">
+          {value}
+          {unit}
+        </span>
+      </div>
+      <input
+        id={id}
+        type="range"
+        min={min}
+        max={max}
+        step={step}
+        value={value}
+        onChange={(e) => onChange(Number(e.target.value))}
+        className="luven-slider"
+      />
+    </div>
+  )
+}
+
+// ============================================================================
+// 3. BADGE, CARD, SKELETON, TOOLTIP
+// ============================================================================
+export function Badge({
+  variant = 'neutral',
+  children,
+  className = '',
+}: {
+  variant?: 'neutral' | 'accent' | 'ok' | 'warn' | 'err'
+  children: ReactNode
+  className?: string
+}) {
+  const styles = {
+    neutral: 'border-edge bg-elevated text-fg-sec',
+    accent: 'border-accent/40 bg-accent/12 text-accent',
+    ok: 'border-ok/35 bg-ok/10 text-ok',
+    warn: 'border-warn/35 bg-warn/10 text-warn',
+    err: 'border-err/35 bg-err/10 text-err',
+  }[variant]
+
+  return (
+    <span
+      className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 font-mono text-[11px] font-medium tracking-tight ${styles} ${className}`}
+    >
+      {children}
+    </span>
+  )
+}
+
+export function Card({
+  children,
+  className = '',
+  hoverLift = false,
+}: {
+  children: ReactNode
+  className?: string
+  hoverLift?: boolean
+}) {
+  return (
+    <div
+      className={`rounded-2xl border border-edge bg-surface ${
+        hoverLift
+          ? 'transition-transform duration-200 [@media(hover:hover)]:hover:-translate-y-1 [@media(hover:hover)]:hover:border-fg-muted'
+          : ''
+      } ${className}`}
+    >
+      {children}
+    </div>
+  )
+}
+
+export function Skeleton({ className = '' }: { className?: string }) {
+  return <div aria-hidden="true" className={`animate-pulse rounded-xl bg-elevated ${className}`} />
+}
+
+export function Tooltip({ content, children }: { content: string; children: ReactNode }) {
+  return (
+    <span className="group relative inline-flex">
+      {children}
+      <span
+        role="tooltip"
+        className="pointer-events-none absolute -top-9 left-1/2 z-50 -translate-x-1/2 rounded-md border border-edge bg-elevated px-2 py-1 text-[11px] whitespace-nowrap text-fg opacity-0 shadow-sm transition-opacity duration-150 group-focus-within:opacity-100 [@media(hover:hover)]:group-hover:opacity-100"
+      >
+        {content}
+      </span>
+    </span>
+  )
+}
+
+// ============================================================================
+// 4. AVATAR & PROGRESSIVE IMAGE (Consistent Ratios + Blur Placeholder)
+// ============================================================================
+export function Avatar({
+  src,
+  name,
+  size = 'md',
+  className = '',
+}: {
+  src?: string | null
+  name: string
+  size?: 'sm' | 'md' | 'lg' | 'xl'
+  className?: string
+}) {
+  const [loaded, setLoaded] = useState(false)
+  const [failed, setFailed] = useState(false)
+  const px = size === 'xl' ? 96 : size === 'lg' ? 64 : size === 'sm' ? 36 : 44
+  const cls =
+    size === 'xl'
+      ? 'h-24 w-24 text-[26px]'
+      : size === 'lg'
+      ? 'h-16 w-16 text-[18px]'
+      : size === 'sm'
+      ? 'h-9 w-9 text-[12px]'
+      : 'h-11 w-11 text-[14px]'
+
+  const initials =
+    name
+      .trim()
+      .split(/\s+/)
+      .slice(0, 2)
+      .map((s) => s[0]?.toUpperCase() || '')
+      .join('') || 'LV'
+
+  return (
+    <div
+      className={`relative shrink-0 overflow-hidden rounded-full border border-edge bg-elevated font-mono font-semibold text-fg select-none ${cls} ${className}`}
+    >
+      {(!src || failed || !loaded) && (
+        <span className="absolute inset-0 flex items-center justify-center">{initials}</span>
+      )}
+      {src && !failed && (
+        <img
+          src={src}
+          alt={`Foto profil ${name}`}
+          width={px}
+          height={px}
+          loading="lazy"
+          decoding="async"
+          onLoad={() => setLoaded(true)}
+          onError={() => setFailed(true)}
+          className={`h-full w-full object-cover transition-all duration-300 ${
+            loaded ? 'scale-100 opacity-100 blur-none' : 'scale-105 opacity-0 blur-sm'
+          }`}
+        />
+      )}
+    </div>
+  )
+}
+
+export function ProgressiveImage({
+  src,
+  alt,
+  ratio = '4:5',
+  fallbackLabel,
+  priority = false,
+  className = '',
+}: {
+  src?: string | null
+  alt: string
+  ratio?: '1:1' | '4:5' | '3:1'
+  fallbackLabel?: string
+  priority?: boolean
+  className?: string
+}) {
+  const [loaded, setLoaded] = useState(false)
+  const [failed, setFailed] = useState(false)
+
+  const dims =
+    ratio === '3:1'
+      ? { w: 1200, h: 400, aspect: 'aspect-[3/1]' }
+      : ratio === '1:1'
+      ? { w: 512, h: 512, aspect: 'aspect-square' }
+      : { w: 800, h: 1000, aspect: 'aspect-[4/5]' }
+
+  return (
+    <div className={`relative w-full overflow-hidden bg-elevated hw-grid-bg ${dims.aspect} ${className}`}>
+      {(!src || failed) && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center p-4 text-center">
+          <span className="rounded-md border border-edge bg-surface px-2.5 py-1 font-mono text-[11px] uppercase tracking-wider text-fg-sec">
+            {fallbackLabel || 'LUVEN TEMPLATE'}
+          </span>
+        </div>
+      )}
+      {src && !failed && (
+        <>
+          {!loaded && <div aria-hidden="true" className="absolute inset-0 animate-pulse bg-elevated" />}
+          <img
+            src={src}
+            alt={alt}
+            width={dims.w}
+            height={dims.h}
+            loading={priority ? 'eager' : 'lazy'}
+            decoding="async"
+            onLoad={() => setLoaded(true)}
+            onError={() => setFailed(true)}
+            className={`h-full w-full object-cover transition-all duration-300 ${
+              loaded ? 'scale-100 opacity-100 blur-none' : 'scale-105 opacity-0 blur-md'
+            }`}
+          />
+        </>
+      )}
+    </div>
+  )
+}
+
+// ============================================================================
+// 5. TABS (Shared layoutId Active Indicator) & DROPDOWN
+// ============================================================================
+export function Tabs<T extends string>({
+  tabs,
+  active,
+  onChange,
+  layoutGroupId,
+}: {
+  tabs: { id: T; label: string; count?: number }[]
+  active: T
+  onChange: (id: T) => void
+  layoutGroupId: string
+}) {
+  const reduce = useReducedMotion()
+  return (
+    <div
+      role="tablist"
+      className="inline-flex max-w-full items-center gap-1 overflow-x-auto rounded-xl border border-edge bg-surface p-1"
+    >
+      {tabs.map((t) => {
+        const isActive = t.id === active
+        return (
+          <button
+            key={t.id}
+            role="tab"
+            type="button"
+            aria-selected={isActive}
+            onClick={() => onChange(t.id)}
+            className={`relative inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-lg px-4 text-[13.5px] font-medium whitespace-nowrap transition-colors focus-visible:outline-2 focus-visible:outline-accent ${
+              isActive ? 'text-on-accent font-semibold' : 'text-fg-sec [@media(hover:hover)]:hover:text-fg'
+            }`}
+          >
+            {isActive && (
+              <motion.span
+                layoutId={layoutGroupId}
+                transition={reduce ? { duration: 0 } : { type: 'spring', stiffness: 420, damping: 34 }}
+                className="absolute inset-0 rounded-lg bg-accent"
+              />
+            )}
+            <span className="relative z-10">{t.label}</span>
+            {typeof t.count === 'number' && (
+              <span
+                className={`relative z-10 rounded-full px-1.5 py-0.2 font-mono text-[11px] tabular-nums ${
+                  isActive ? 'bg-on-accent/15 text-on-accent' : 'bg-elevated text-fg-sec'
+                }`}
+              >
+                {t.count}
+              </span>
+            )}
+          </button>
+        )
+      })}
+    </div>
+  )
+}
+
+export function Dropdown({
+  trigger,
+  items,
+  align = 'right',
+}: {
+  trigger: ReactNode
+  items: { label: string; icon?: ReactNode; danger?: boolean; onClick: () => void }[]
+  align?: 'left' | 'right'
+}) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!open) return
+    const onOut = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+    }
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setOpen(false)
+    }
+    document.addEventListener('mousedown', onOut)
+    window.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('mousedown', onOut)
+      window.removeEventListener('keydown', onKey)
+    }
+  }, [open])
+
+  return (
+    <div ref={ref} className="relative inline-block">
+      <div onClick={() => setOpen((v) => !v)}>{trigger}</div>
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            role="menu"
+            initial={{ opacity: 0, scale: 0.97, y: 6 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.97, y: 4 }}
+            transition={{ duration: 0.16, ease: EASE_SMOOTH }}
+            className={`absolute top-[calc(100%+6px)] z-50 min-w-[190px] rounded-xl border border-edge bg-elevated p-1.5 shadow-xl ${
+              align === 'right' ? 'right-0' : 'left-0'
+            }`}
+          >
+            {items.map((item) => (
+              <button
+                key={item.label}
+                role="menuitem"
+                type="button"
+                onClick={() => {
+                  setOpen(false)
+                  item.onClick()
+                }}
+                className={`flex min-h-11 w-full cursor-pointer items-center gap-2.5 rounded-lg px-3 text-left text-[13.5px] transition-colors [@media(hover:hover)]:hover:bg-surface focus-visible:outline-2 focus-visible:outline-accent ${
+                  item.danger ? 'text-err' : 'text-fg'
+                }`}
+              >
+                {item.icon}
+                <span>{item.label}</span>
+              </button>
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  )
+}
+
+// ============================================================================
+// 6. MODAL / BOTTOM SHEET (Auto BottomSheet on <640px, Focus Trap, Esc, Scroll Lock)
+// ============================================================================
+export function Modal({
+  open,
+  onClose,
+  title,
+  description,
+  children,
+  maxWidth = 'max-w-[500px]',
+}: {
+  open: boolean
+  onClose: () => void
+  title: string
+  description?: string
+  children: ReactNode
+  maxWidth?: string
+}) {
+  const reduce = useReducedMotion()
+  const titleId = useId()
+  const panelRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!open) return
+    const prev = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose()
+    }
+    window.addEventListener('keydown', onKey)
+    return () => {
+      document.body.style.overflow = prev
+      window.removeEventListener('keydown', onKey)
+    }
+  }, [open, onClose])
+
+  return (
+    <AnimatePresence>
+      {open && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.18 }}
+          onClick={onClose}
+          className="fixed inset-0 z-50 flex items-end justify-center bg-bg/80 backdrop-blur-xs sm:items-center sm:p-4"
+        >
+          <motion.div
+            ref={panelRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby={titleId}
+            initial={reduce ? { opacity: 0 } : { opacity: 0, y: 28, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={reduce ? { opacity: 0 } : { opacity: 0, y: 20, scale: 0.98 }}
+            transition={{ duration: 0.25, ease: EASE_SMOOTH }}
+            onClick={(e) => e.stopPropagation()}
+            className={`relative flex max-h-[92dvh] w-full flex-col overflow-hidden rounded-t-3xl border border-edge bg-surface text-fg shadow-2xl sm:max-h-[88dvh] sm:rounded-2xl ${maxWidth}`}
+          >
+            <div aria-hidden="true" className="mx-auto mt-2.5 h-1 w-10 rounded-full bg-edge sm:hidden" />
+            <div className="flex shrink-0 items-start justify-between gap-4 border-b border-edge px-5 py-4">
+              <div>
+                <h2 id={titleId} className="text-[17px] font-bold tracking-[-0.02em] text-fg">
+                  {title}
+                </h2>
+                {description && <p className="mt-1 text-[13px] text-fg-sec">{description}</p>}
+              </div>
+              <IconButton label="Tutup dialog" onClick={onClose}>
+                <X size={18} />
+              </IconButton>
+            </div>
+            <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5 pb-[max(1.25rem,env(safe-area-inset-bottom))]">
+              {children}
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  )
+}
+
+// ============================================================================
+// 7. TOAST PROVIDER
+// ============================================================================
+interface ToastItem {
+  id: string
+  tone: 'ok' | 'err' | 'info'
+  message: string
+}
+
+const ToastContext = createContext<{
+  pushToast: (message: string, tone?: 'ok' | 'err' | 'info') => void
+}>({
+  pushToast: () => {},
+})
+
+export function ToastProvider({ children }: { children: ReactNode }) {
+  const [items, setItems] = useState<ToastItem[]>([])
+
+  const pushToast = useCallback((message: string, tone: 'ok' | 'err' | 'info' = 'ok') => {
+    const id = crypto.randomUUID()
+    setItems((prev) => [...prev.slice(-2), { id, tone, message }])
+    setTimeout(() => {
+      setItems((prev) => prev.filter((t) => t.id !== id))
+    }, 4200)
+  }, [])
+
+  return (
+    <ToastContext.Provider value={{ pushToast }}>
+      {children}
+      <div
+        aria-live="polite"
+        className="pointer-events-none fixed bottom-[max(1.25rem,env(safe-area-inset-bottom))] right-4 left-4 z-50 flex flex-col items-center gap-2 sm:left-auto sm:items-end"
+      >
+        <AnimatePresence>
+          {items.map((t) => (
+            <motion.div
+              key={t.id}
+              initial={{ opacity: 0, y: 16, scale: 0.97 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 10, scale: 0.97 }}
+              transition={{ duration: 0.22, ease: EASE_SMOOTH }}
+              className="pointer-events-auto flex w-full max-w-[380px] items-center gap-3 rounded-xl border border-edge bg-elevated px-4 py-3 text-[13.5px] text-fg shadow-xl"
+            >
+              {t.tone === 'ok' && <CheckCircle2 size={17} className="shrink-0 text-ok" />}
+              {t.tone === 'err' && <AlertCircle size={17} className="shrink-0 text-err" />}
+              {t.tone === 'info' && <Info size={17} className="shrink-0 text-accent" />}
+              <span className="min-w-0 flex-1 leading-snug">{t.message}</span>
+              <button
+                type="button"
+                onClick={() => setItems((prev) => prev.filter((x) => x.id !== t.id))}
+                aria-label="Tutup pemberitahuan"
+                className="inline-flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-lg text-fg-sec [@media(hover:hover)]:hover:text-fg"
+              >
+                <X size={14} />
+              </button>
+            </motion.div>
+          ))}
+        </AnimatePresence>
+      </div>
+    </ToastContext.Provider>
+  )
+}
+
+export function useToast() {
+  return useContext(ToastContext)
+}
