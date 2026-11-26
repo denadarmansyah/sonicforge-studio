@@ -13,7 +13,8 @@ import {
   X,
 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
-import { CONTACT_EMAIL } from '../lib/supabaseClient'
+import { ADMIN_TIKTOK_HANDLE, ADMIN_TIKTOK_URL } from '../lib/supabaseClient'
+import { TikTokGlyph } from './BrandIcons'
 import { Logo } from './Logo'
 import { Avatar, Button, Dropdown, EASE_SMOOTH, IconButton, LinkButton } from './primitives'
 
@@ -357,6 +358,19 @@ export function SiteLayout({
               </div>
 
               <div className="mt-8 flex flex-col gap-2.5 border-t border-edge pt-5">
+                <a
+                  href={ADMIN_TIKTOK_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Hubungi admin Luven di TikTok @luvenindonesia"
+                  className="flex min-h-11 items-center justify-between rounded-xl border border-edge bg-bg px-4 text-[13.5px] font-medium text-fg no-underline [@media(hover:hover)]:hover:border-fg-sec"
+                >
+                  <span className="inline-flex items-center gap-2.5">
+                    <TikTokGlyph size={15} />
+                    <span>Admin: {ADMIN_TIKTOK_HANDLE}</span>
+                  </span>
+                  <ExternalLink size={14} className="text-fg-sec" />
+                </a>
                 {user ? (
                   <Button
                     variant="danger"
@@ -448,8 +462,20 @@ export function SiteLayout({
                   </li>
                   <li>
                     <Link to="/contact" className="inline-flex min-h-11 items-center text-fg-sec no-underline [@media(hover:hover)]:hover:text-fg">
-                      Kontak ({CONTACT_EMAIL})
+                      Pusat Bantuan & Kontak
                     </Link>
+                  </li>
+                  <li>
+                    <a
+                      href={ADMIN_TIKTOK_URL}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label="Hubungi admin Luven di TikTok @luvenindonesia"
+                      className="inline-flex min-h-11 items-center gap-2 text-fg no-underline [@media(hover:hover)]:hover:underline"
+                    >
+                      <TikTokGlyph size={15} />
+                      <span>{ADMIN_TIKTOK_HANDLE}</span>
+                    </a>
                   </li>
                 </ul>
               </div>

@@ -18,7 +18,7 @@ import { useAuth } from '../context/AuthContext'
 import { fetchPublicFeed, recordAnalyticsEvent } from '../lib/platformStore'
 import { useDocumentMeta } from '../lib/seo'
 import { CreatorTemplate, Profile } from '../lib/types'
-import { HardwareKnob, VerifiedBadgeIcon } from '../ui/BrandIcons'
+import { VerifiedBadgeIcon } from '../ui/BrandIcons'
 import { Logo } from '../ui/Logo'
 import { Avatar, Badge, Card, EASE_SMOOTH, LinkButton } from '../ui/primitives'
 import { PublicProfileRenderer, TemplateCard } from '../ui/ProfileViewCard'
@@ -34,7 +34,7 @@ const EXAMPLE_PLACEHOLDER_PROFILE: Profile = {
   avatar_url: null,
   banner_url: null,
   tiktok_url: 'https://www.tiktok.com/@namakamu',
-  instagram_url: 'https://www.instagram.com/namakamu',
+  instagram_url: null,
   youtube_url: null,
   website_url: null,
   category: 'Transisi',
@@ -86,8 +86,8 @@ const FAQS = [
     a: 'Tidak. Luven tidak melakukan scraping. Anda memegang kendali penuh atas judul, gambar thumbnail 4:5, dan tautan resmi CapCut/TikTok yang ingin ditampilkan.',
   },
   {
-    q: 'Bagaimana tampilan tautan saya saat dibagikan ke WhatsApp atau bio TikTok?',
-    a: 'Setiap halaman /@username memiliki metadata Open Graph khusus (nama kreator, bio, dan foto profil) sehingga muncul rapi saat dibagikan ke chat atau media sosial.',
+    q: 'Bagaimana tampilan tautan saya saat dibagikan ke bio TikTok?',
+    a: 'Setiap halaman /@username memiliki metadata Open Graph khusus (nama kreator, bio, dan foto profil) sehingga tampil rapi saat dibagikan.',
   },
   {
     q: 'Apakah data pribadi pengunjung halaman saya direkam di analitik?',
@@ -211,53 +211,36 @@ export function HomePage() {
                 </LinkButton>
               </motion.div>
 
-              {/* Functional Hardware Status & Reactive Level Strip */}
+              {/* Clean Typographic Spec Strip (Zero CSS-shape illustrations) */}
               <motion.div
                 initial={reduce ? false : { opacity: 0, y: 14 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.65, delay: 0.62, ease: EASE_SMOOTH }}
-                className="mt-9 space-y-3"
+                className="mt-9 grid grid-cols-1 gap-2.5 sm:grid-cols-3"
               >
-                <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-3">
-                  <HardwareKnob label="SETUP PROFIL" valueLabel="< 2 MENIT" angle={-35} />
-                  <HardwareKnob label="RASIO KARTU" valueLabel="4:5 VERTIKAL" angle={18} />
-                  <HardwareKnob label="KOMPRESI" valueLabel="WEBP OTOMATIS" angle={52} />
-                </div>
-
-                <div
-                  aria-hidden="true"
-                  className="flex items-center justify-between gap-4 rounded-xl border border-edge bg-surface px-4 py-2.5"
-                >
-                  <span className="font-mono text-[10.5px] uppercase tracking-wider text-fg-sec">
-                    SIGNAL // LUVEN DECK
-                  </span>
-                  <div className="flex h-5 items-end gap-1">
-                    {METER_BARS.map((pct, i) =>
-                      reduce ? (
-                        <span
-                          key={i}
-                          style={{ height: `${pct}%` }}
-                          className={`w-1.5 rounded-xs ${i % 4 === 0 ? 'bg-accent' : 'bg-fg-muted'}`}
-                        />
-                      ) : (
-                        <motion.span
-                          key={i}
-                          style={{ height: `${pct}%`, originY: 1 }}
-                          animate={{ scaleY: [0.45, 1, 0.58, 0.88, 0.45] }}
-                          transition={{
-                            duration: 1.8 + (i % 4) * 0.25,
-                            repeat: Infinity,
-                            ease: 'easeInOut',
-                            delay: i * 0.08,
-                          }}
-                          className={`w-1.5 rounded-xs will-change-transform ${
-                            i % 4 === 0 ? 'bg-accent' : 'bg-fg-muted'
-                          }`}
-                        />
-                      )
-                    )}
-                  </div>
-                </div>
+                {[
+                  { icon: Smartphone, label: 'SETUP PROFIL', value: '< 2 MENIT' },
+                  { icon: Compass, label: 'RASIO KARTU', value: '4:5 VERTIKAL' },
+                  { icon: AudioWaveform, label: 'KOMPRESI', value: 'WEBP OTOMATIS' },
+                ].map((spec) => {
+                  const Icon = spec.icon
+                  return (
+                    <div
+                      key={spec.label}
+                      className="flex items-center gap-3 rounded-xl border border-edge bg-surface px-3.5 py-2.5"
+                    >
+                      <Icon size={18} className="shrink-0 text-fg-sec" />
+                      <div className="min-w-0">
+                        <div className="font-mono text-[10px] uppercase tracking-wider text-fg-sec">
+                          {spec.label}
+                        </div>
+                        <div className="font-mono text-[12px] font-medium tabular-nums text-fg">
+                          {spec.value}
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })}
               </motion.div>
             </div>
 
@@ -494,7 +477,7 @@ export function HomePage() {
               Tautan Terverifikasi & Bebas Spam
             </h3>
             <p className="mt-2 text-[14px] leading-relaxed text-fg-sec">
-              Setiap tautan keluar diperiksa di sisi klien dan database agar hanya mengarah ke domain resmi TikTok, CapCut, Instagram, atau YouTube melalui koneksi HTTPS.
+              Setiap tautan keluar diperiksa di sisi klien dan database agar hanya mengarah ke domain resmi TikTok dan CapCut melalui koneksi HTTPS.
             </p>
           </Card>
 

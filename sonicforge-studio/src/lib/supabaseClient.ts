@@ -7,8 +7,8 @@ export const SITE_ORIGIN =
   ((import.meta.env.VITE_SITE_URL as string | undefined)?.trim() || '').replace(/\/+$/, '') ||
   (typeof window !== 'undefined' ? window.location.origin : 'https://luven.my.id')
 
-export const CONTACT_EMAIL =
-  (import.meta.env.VITE_CONTACT_EMAIL as string | undefined)?.trim() || 'halo@luven.my.id'
+export const ADMIN_TIKTOK_HANDLE = '@luvenindonesia'
+export const ADMIN_TIKTOK_URL = 'https://www.tiktok.com/@luvenindonesia'
 
 export const isSupabaseConfigured = Boolean(
   rawUrl &&

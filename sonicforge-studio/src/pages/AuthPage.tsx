@@ -189,7 +189,7 @@ export function AuthPage({ mode }: { mode: 'login' | 'register' | 'forgot' }) {
                 )}
 
                 {error && (
-                  <p role="alert" className="rounded-xl border-2 border-fg bg-bg px-3.5 py-2.5 text-[13px] font-medium text-fg">
+                  <p role="alert" className="rounded-xl border border-fg border-l-4 border-l-fg bg-bg px-3.5 py-2.5 text-[13px] font-medium text-fg">
                     {error}
                   </p>
                 )}

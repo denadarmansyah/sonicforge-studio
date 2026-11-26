@@ -740,10 +740,10 @@ export function ToastProvider({ children }: { children: ReactNode }) {
               transition={{ duration: 0.22, ease: EASE_SMOOTH }}
               className={`pointer-events-auto flex w-full max-w-[380px] items-center gap-3 rounded-xl bg-elevated px-4 py-3 text-[13.5px] text-fg ${
                 t.tone === 'err'
-                  ? 'border-2 border-fg'
+                  ? 'border border-fg border-l-4 border-l-fg'
                   : t.tone === 'ok'
-                  ? 'border border-fg/45'
-                  : 'border border-edge'
+                  ? 'border border-edge border-l-4 border-l-fg'
+                  : 'border border-edge border-l-4 border-l-fg-sec'
               }`}
             >
               {t.tone === 'ok' && <CheckCircle2 size={17} className="shrink-0 text-fg" />}

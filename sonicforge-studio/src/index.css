@@ -5,40 +5,41 @@
      LUVEN SINGLE SOURCE OF TRUTH MONOCHROME DESIGN SYSTEM TOKENS
      Pure Black & White (Zero chromatic hues, maximum contrast accents)
      ========================================================================= */
-  --color-bg: #09090B;
-  --color-surface: #111114;
-  --color-elevated: #18181C;
-  --color-edge: #27272A;
+  --color-bg: #0A0A0A;
+  --color-surface: #111111;
+  --color-elevated: #1A1A1A;
+  --color-edge: #262626;
+  --color-edge-strong: #3A3A3A;
   --color-fg: #FAFAFA;
-  --color-fg-sec: #A1A1AA;
-  --color-fg-muted: #71717A;
+  --color-fg-sec: #A3A3A3;
+  --color-fg-muted: #737373;
 
   --color-accent: #FAFAFA;
-  --color-accent-hover: #E4E4E7;
-  --color-on-accent: #09090B;
+  --color-accent-hover: #E5E5E5;
+  --color-on-accent: #0A0A0A;
 
-  /* Monochrome status tokens (differentiated via icons, text, border width & pattern) */
+  /* Monochrome status tokens (differentiated via icons, text, border-l-4 & pattern) */
   --color-ok: #FAFAFA;
-  --color-warn: #D4D4D8;
+  --color-warn: #D4D4D4;
   --color-err: #FAFAFA;
 
   /* Light Contrast Section Tokens */
   --color-light-bg: #FFFFFF;
-  --color-light-surface: #F4F4F5;
-  --color-light-edge: #E4E4E7;
-  --color-light-fg: #09090B;
-  --color-light-sec: #52525B;
-  --color-light-muted: #71717A;
+  --color-light-surface: #F5F5F5;
+  --color-light-edge: #E5E5E5;
+  --color-light-fg: #0A0A0A;
+  --color-light-sec: #525252;
+  --color-light-muted: #737373;
 
   /* Studio (/studio) Unified Monochrome Aliases */
-  --color-base: #09090B;
-  --color-panel: #111114;
-  --color-raised: #18181C;
-  --color-line: #27272A;
+  --color-base: #0A0A0A;
+  --color-panel: #111111;
+  --color-raised: #1A1A1A;
+  --color-line: #262626;
   --color-ink: #FAFAFA;
-  --color-sub: #A1A1AA;
-  --color-mute: #71717A;
-  --color-sig: #A1A1AA;
+  --color-sub: #A3A3A3;
+  --color-mute: #737373;
+  --color-sig: #A3A3A3;
   --color-clip: #FAFAFA;
 
   --font-sans: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;

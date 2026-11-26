@@ -276,7 +276,7 @@ export function OnboardingPage() {
                   setFormErr('')
                 }}
                 leftAddon={<TikTokGlyph size={15} />}
-                hint="Anda juga bisa menambahkan Instagram, YouTube, dan template CapCut di Dasbor setelah ini."
+                hint="Anda juga bisa menambahkan tautan sosial dan template CapCut lainnya di Dasbor setelah ini."
               />
 
               {formErr && <p role="alert" className="rounded-lg border-2 border-fg px-3 py-2 text-[13px] font-medium text-fg">{formErr}</p>}
