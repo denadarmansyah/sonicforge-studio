@@ -1,3 +1,4 @@
+import { BillingCycle, PlanId } from '../config/plans'
 import { processImageToWebp, ImageKind } from './imageProcessor'
 import {
   getAnonymousRateBucket,
@@ -5,13 +6,25 @@ import {
   isSandboxEnabled,
 } from './supabaseClient'
 import {
+  DEFAULT_FREE_THEME,
+  DEFAULT_PROFILE_SETTINGS,
+  getEffectivePlan,
+  ProfileSettings,
+  ProfileThemeConfig,
+  sanitizeProfileSettings,
+  sanitizeProfileTheme,
+} from './themeConfig'
+import {
   AbuseReport,
   AnalyticsEventType,
   AuthSessionUser,
   CreatorAnalyticsSummary,
   CreatorTemplate,
   DailyMetricPoint,
+  LinkItem,
+  LinkItemType,
   Profile,
+  SubscriptionRecord,
 } from './types'
 import {
   normalizeUsername,
@@ -19,6 +32,69 @@ import {
   validateAllowedUrl,
   validateUsernameFormat,
 } from './validators'
+
+// ============================================================================
+// REFERRAL TRACKING (?ref=username)
+// ============================================================================
+const REF_STORAGE_KEY = 'luven.pending_referral'
+
+export function captureReferralCode(rawRef: string | null | undefined): void {
+  if (typeof window === 'undefined' || !rawRef) return
+  const fmt = validateUsernameFormat(rawRef)
+  if (fmt.ok) {
+    try {
+      localStorage.setItem(REF_STORAGE_KEY, fmt.normalized)
+    } catch {
+      /* ignore */
+    }
+  }
+}
+
+export function getPendingReferral(): string | null {
+  if (typeof window === 'undefined') return null
+  try {
+    return localStorage.getItem(REF_STORAGE_KEY) || null
+  } catch {
+    return null
+  }
+}
+
+export function clearPendingReferral(): void {
+  if (typeof window === 'undefined') return
+  try {
+    localStorage.removeItem(REF_STORAGE_KEY)
+  } catch {
+    /* ignore */
+  }
+}
+
+export function normalizeProfile(raw: Partial<Profile> & { id: string; username: string; display_name: string }): Profile {
+  const effPlan = getEffectivePlan(raw.plan, raw.plan_expires_at)
+  return {
+    id: raw.id,
+    username: raw.username,
+    display_name: raw.display_name,
+    bio: raw.bio || '',
+    avatar_url: raw.avatar_url ?? null,
+    banner_url: raw.banner_url ?? null,
+    tiktok_url: raw.tiktok_url ?? null,
+    instagram_url: raw.instagram_url ?? null,
+    youtube_url: raw.youtube_url ?? null,
+    website_url: raw.website_url ?? null,
+    category: raw.category || 'Transisi',
+    is_verified: Boolean(raw.is_verified),
+    is_featured: Boolean(raw.is_featured),
+    is_banned: Boolean(raw.is_banned),
+    onboarding_completed: Boolean(raw.onboarding_completed),
+    plan: raw.plan === 'pro' ? 'pro' : 'free',
+    plan_expires_at: raw.plan_expires_at ?? null,
+    theme: sanitizeProfileTheme(raw.theme, effPlan),
+    settings: sanitizeProfileSettings(raw.settings, effPlan),
+    referred_by: raw.referred_by ?? null,
+    created_at: raw.created_at || new Date().toISOString(),
+    updated_at: raw.updated_at,
+  }
+}
 
 // ============================================================================
 // LOCAL SANDBOX STORE (Used ONLY when developer explicitly enables Sandbox
@@ -30,11 +106,17 @@ interface SandboxState {
   admins: string[]
   profiles: Profile[]
   templates: CreatorTemplate[]
+  links: LinkItem[]
+  subscriptions: SubscriptionRecord[]
   events: {
     owner_id: string
     template_id: string | null
+    link_id?: string | null
     event_type: AnalyticsEventType
     event_day: string
+    referrer_host?: string
+    device_type?: 'mobile' | 'desktop'
+    event_hour?: number
     hit_count: number
   }[]
   reports: AbuseReport[]
@@ -50,6 +132,8 @@ function emptySandbox(): SandboxState {
     admins: [],
     profiles: [],
     templates: [],
+    links: [],
+    subscriptions: [],
     events: [],
     reports: [],
     contacts: [],
@@ -352,11 +436,12 @@ export async function getProfileByUserId(userId: string): Promise<Profile | null
   const supabase = getLiveSupabaseClient()
   if (supabase) {
     const { data } = await supabase.from('profiles').select('*').eq('id', userId).maybeSingle()
-    return (data as Profile | null) ?? null
+    return data ? normalizeProfile(data as Profile) : null
   }
   if (isSandboxEnabled()) {
     const db = readSbx()
-    return db.profiles.find((p) => p.id === userId) ?? null
+    const hit = db.profiles.find((p) => p.id === userId)
+    return hit ? normalizeProfile(hit) : null
   }
   return null
 }
@@ -364,46 +449,92 @@ export async function getProfileByUserId(userId: string): Promise<Profile | null
 export async function getPublicProfileByUsername(username: string): Promise<{
   profile: Profile | null
   templates: CreatorTemplate[]
+  links: LinkItem[]
 }> {
   const clean = normalizeUsername(username)
-  if (!clean) return { profile: null, templates: [] }
+  if (!clean) return { profile: null, templates: [], links: [] }
 
   const supabase = getLiveSupabaseClient()
   if (supabase) {
-    const { data: prof } = await supabase
+    const { data: profRaw } = await supabase
       .from('profiles')
       .select('*')
       .eq('username', clean)
       .eq('is_banned', false)
       .maybeSingle()
 
-    if (!prof) return { profile: null, templates: [] }
+    if (!profRaw) return { profile: null, templates: [], links: [] }
+    const prof = normalizeProfile(profRaw as Profile)
+    const effPlan = getEffectivePlan(prof.plan, prof.plan_expires_at)
 
-    const { data: tpls } = await supabase
-      .from('templates')
-      .select('*')
-      .eq('owner_id', prof.id)
-      .eq('status', 'active')
-      .order('sort_order', { ascending: true })
-      .order('created_at', { ascending: false })
+    const [{ data: tpls }, { data: linksData }] = await Promise.all([
+      supabase
+        .from('templates')
+        .select('*')
+        .eq('owner_id', prof.id)
+        .eq('status', 'active')
+        .order('sort_order', { ascending: true })
+        .order('created_at', { ascending: false }),
+      supabase
+        .from('links')
+        .select('*')
+        .eq('owner_id', prof.id)
+        .eq('is_active', true)
+        .order('position', { ascending: true })
+        .order('created_at', { ascending: true }),
+    ])
+
+    const nowMs = Date.now()
+    const visibleLinks = ((linksData as LinkItem[]) || [])
+      .filter((l) => {
+        if (l.schedule_start && Date.parse(l.schedule_start) > nowMs) return false
+        if (l.schedule_end && Date.parse(l.schedule_end) < nowMs) return false
+        if (effPlan === 'free' && ['embed_tiktok', 'embed_youtube', 'announcement'].includes(l.type)) return false
+        return true
+      })
+      .map((l) =>
+        effPlan === 'free'
+          ? {
+              ...l,
+              is_featured: false,
+              group_id: null,
+              thumbnail_url: l.type === 'capcut' ? l.thumbnail_url : null,
+            }
+          : l
+      )
 
     return {
-      profile: prof as Profile,
-      templates: ((tpls as CreatorTemplate[]) || []),
+      profile: prof,
+      templates: (tpls as CreatorTemplate[]) || [],
+      links: effPlan === 'free' ? visibleLinks.slice(0, 14) : visibleLinks,
     }
   }
 
   if (isSandboxEnabled()) {
     const db = readSbx()
-    const prof = db.profiles.find((p) => p.username === clean && !p.is_banned) ?? null
-    if (!prof) return { profile: null, templates: [] }
+    const profRaw = db.profiles.find((p) => p.username === clean && !p.is_banned) ?? null
+    if (!profRaw) return { profile: null, templates: [], links: [] }
+    const prof = normalizeProfile(profRaw)
+    const effPlan = getEffectivePlan(prof.plan, prof.plan_expires_at)
     const tpls = db.templates
       .filter((t) => t.owner_id === prof.id && t.status === 'active')
       .sort((a, b) => a.sort_order - b.sort_order || b.created_at.localeCompare(a.created_at))
-    return { profile: prof, templates: tpls }
+
+    const nowMs = Date.now()
+    const links = db.links
+      .filter((l) => l.owner_id === prof.id && l.is_active)
+      .filter((l) => (!l.schedule_start || Date.parse(l.schedule_start) <= nowMs) && (!l.schedule_end || Date.parse(l.schedule_end) >= nowMs))
+      .filter((l) => effPlan === 'pro' || !['embed_tiktok', 'embed_youtube', 'announcement'].includes(l.type))
+      .sort((a, b) => a.position - b.position || a.created_at.localeCompare(b.created_at))
+      .map((l) =>
+        effPlan === 'free'
+          ? { ...l, is_featured: false, group_id: null, thumbnail_url: l.type === 'capcut' ? l.thumbnail_url : null }
+          : l
+      )
+    return { profile: prof, templates: tpls, links }
   }
 
-  return { profile: null, templates: [] }
+  return { profile: null, templates: [], links: [] }
 }
 
 export interface UpsertProfileInput {
@@ -417,6 +548,7 @@ export interface UpsertProfileInput {
   website_url?: string
   avatar_url?: string | null
   banner_url?: string | null
+  referred_by?: string | null
   onboarding_completed?: boolean
 }
 
@@ -443,6 +575,9 @@ export async function saveOwnProfile(userId: string, input: UpsertProfileInput):
   const web = validateAllowedUrl(input.website_url || '', 'website', false)
   if (!web.ok) throw new Error(`Website: ${web.error}`)
 
+  const cleanRef = input.referred_by ? normalizeUsername(input.referred_by) : null
+  const validRef = cleanRef && cleanRef !== uCheck.normalized ? cleanRef : null
+
   const supabase = getLiveSupabaseClient()
   if (supabase) {
     const payload = {
@@ -457,6 +592,7 @@ export async function saveOwnProfile(userId: string, input: UpsertProfileInput):
       website_url: web.clean,
       ...(input.avatar_url !== undefined ? { avatar_url: input.avatar_url } : {}),
       ...(input.banner_url !== undefined ? { banner_url: input.banner_url } : {}),
+      ...(validRef ? { referred_by: validRef } : {}),
       onboarding_completed: input.onboarding_completed ?? true,
     }
     const { data, error } = await supabase
@@ -471,7 +607,7 @@ export async function saveOwnProfile(userId: string, input: UpsertProfileInput):
       }
       throw new Error(error.message)
     }
-    return data as Profile
+    return normalizeProfile(data as Profile)
   }
 
   if (isSandboxEnabled()) {
@@ -481,8 +617,8 @@ export async function saveOwnProfile(userId: string, input: UpsertProfileInput):
       throw new Error('Akun ini sedang ditangguhkan oleh moderator.')
     }
     const now = new Date().toISOString()
-    const existing = idx >= 0 ? db.profiles[idx] : null
-    const merged: Profile = {
+    const existing = idx >= 0 ? normalizeProfile(db.profiles[idx]) : null
+    const merged: Profile = normalizeProfile({
       id: userId,
       username: uCheck.normalized,
       display_name: displayName,
@@ -497,14 +633,59 @@ export async function saveOwnProfile(userId: string, input: UpsertProfileInput):
       is_verified: existing?.is_verified ?? false,
       is_featured: existing?.is_featured ?? false,
       is_banned: existing?.is_banned ?? false,
+      plan: existing?.plan ?? 'free',
+      plan_expires_at: existing?.plan_expires_at ?? null,
+      theme: existing?.theme ?? DEFAULT_FREE_THEME,
+      settings: existing?.settings ?? DEFAULT_PROFILE_SETTINGS,
+      referred_by: existing?.referred_by ?? validRef,
       onboarding_completed: input.onboarding_completed ?? true,
       created_at: existing?.created_at ?? now,
       updated_at: now,
-    }
+    })
     if (idx >= 0) db.profiles[idx] = merged
     else db.profiles.push(merged)
     writeSbx(db)
     return merged
+  }
+
+  throw new Error('Supabase belum dikonfigurasi.')
+}
+
+export async function saveOwnAppearance(
+  userId: string,
+  themeInput: ProfileThemeConfig,
+  settingsInput: ProfileSettings
+): Promise<Profile> {
+  const existing = await getProfileByUserId(userId)
+  if (!existing) throw new Error('Profil tidak ditemukan.')
+  const effPlan = getEffectivePlan(existing.plan, existing.plan_expires_at)
+  const cleanTheme = sanitizeProfileTheme(themeInput, effPlan)
+  const cleanSettings = sanitizeProfileSettings(settingsInput, effPlan)
+
+  const supabase = getLiveSupabaseClient()
+  if (supabase) {
+    const { data, error } = await supabase
+      .from('profiles')
+      .update({ theme: cleanTheme, settings: cleanSettings })
+      .eq('id', userId)
+      .select('*')
+      .single()
+    if (error) throw new Error(error.message)
+    return normalizeProfile(data as Profile)
+  }
+
+  if (isSandboxEnabled()) {
+    const db = readSbx()
+    const idx = db.profiles.findIndex((p) => p.id === userId)
+    if (idx < 0) throw new Error('Profil tidak ditemukan.')
+    db.profiles[idx] = {
+      ...normalizeProfile(db.profiles[idx]),
+      theme: cleanTheme,
+      settings: cleanSettings,
+      updated_at: new Date().toISOString(),
+    }
+    writeSbx(db)
+    return db.profiles[idx]
   }
 
   throw new Error('Supabase belum dikonfigurasi.')
@@ -516,7 +697,12 @@ export async function uploadCreatorImage(
   kind: ImageKind
 ): Promise<string> {
   const webpFile = await processImageToWebp(file, kind)
-  const bucket = kind === 'avatar' ? 'avatars' : kind === 'banner' ? 'banners' : 'thumbnails'
+  const bucket =
+    kind === 'avatar'
+      ? 'avatars'
+      : kind === 'banner' || kind === 'background' || kind === 'og'
+      ? 'banners'
+      : 'thumbnails'
   const path = `${userId}/${kind}-${Date.now()}.webp`
 
   const supabase = getLiveSupabaseClient()
@@ -743,6 +929,280 @@ export async function reorderOwnTemplates(userId: string, orderedIds: string[]):
 }
 
 // ============================================================================
+// LINK-IN-BIO ITEMS CRUD, SCHEDULING & FREE PLAN ENFORCEMENT
+// ============================================================================
+
+export async function listOwnLinks(userId: string): Promise<LinkItem[]> {
+  const supabase = getLiveSupabaseClient()
+  if (supabase) {
+    const { data, error } = await supabase
+      .from('links')
+      .select('*')
+      .eq('owner_id', userId)
+      .order('position', { ascending: true })
+      .order('created_at', { ascending: true })
+    if (error) return []
+    return (data as LinkItem[]) || []
+  }
+  if (isSandboxEnabled()) {
+    const db = readSbx()
+    return db.links
+      .filter((l) => l.owner_id === userId)
+      .sort((a, b) => a.position - b.position || a.created_at.localeCompare(b.created_at))
+  }
+  return []
+}
+
+export interface SaveLinkInput {
+  id?: string
+  type: LinkItemType
+  title: string
+  url?: string | null
+  thumbnail_url?: string | null
+  is_active?: boolean
+  is_featured?: boolean
+  group_id?: string | null
+  schedule_start?: string | null
+  schedule_end?: string | null
+}
+
+function validateLinkUrlByType(type: LinkItemType, rawUrl: string | null | undefined): string | null {
+  if (type === 'heading' || type === 'announcement') return null
+  const val = (rawUrl || '').trim()
+  const platform =
+    type === 'capcut'
+      ? 'capcut'
+      : type === 'tiktok' || type === 'embed_tiktok'
+      ? 'tiktok'
+      : type === 'youtube' || type === 'embed_youtube'
+      ? 'youtube'
+      : type === 'instagram'
+      ? 'instagram'
+      : type === 'whatsapp'
+      ? 'whatsapp'
+      : 'link'
+  const chk = validateAllowedUrl(val, platform, true)
+  if (!chk.ok || !chk.clean) throw new Error(chk.error || 'Tautan HTTPS tidak valid.')
+  return chk.clean
+}
+
+export async function saveLinkItem(userId: string, input: SaveLinkInput): Promise<LinkItem> {
+  const title = sanitizePlainText(input.title, 120)
+  if (!title) throw new Error('Judul link wajib diisi (maks. 120 karakter).')
+
+  const cleanUrl = validateLinkUrlByType(input.type, input.url)
+  const cleanGroup = input.group_id ? sanitizePlainText(input.group_id, 60) : null
+  const ownerProfile = await getProfileByUserId(userId)
+  if (!ownerProfile) throw new Error('Profil kreator tidak ditemukan.')
+  const effPlan = getEffectivePlan(ownerProfile.plan, ownerProfile.plan_expires_at)
+
+  if (effPlan === 'free') {
+    if (['embed_tiktok', 'embed_youtube', 'announcement'].includes(input.type)) {
+      throw new Error('Tipe blok ini hanya tersedia pada paket Pro.')
+    }
+    const existing = await listOwnLinks(userId)
+    const activeNonHeadings = existing.filter(
+      (l) => l.type !== 'heading' && l.is_active && l.id !== input.id
+    )
+    if (input.type !== 'heading' && (input.is_active ?? true) && activeNonHeadings.length >= 8) {
+      throw new Error(
+        'Paket Free dibatasi maksimal 8 link aktif (tidak termasuk judul bagian). Upgrade ke Pro untuk link tanpa batas.'
+      )
+    }
+  }
+
+  const payload = {
+    type: input.type,
+    title,
+    url: cleanUrl,
+    thumbnail_url: effPlan === 'pro' || input.type === 'capcut' ? input.thumbnail_url ?? null : null,
+    is_active: input.is_active ?? true,
+    is_featured: effPlan === 'pro' ? Boolean(input.is_featured) : false,
+    group_id: effPlan === 'pro' ? cleanGroup : null,
+    schedule_start: effPlan === 'pro' ? input.schedule_start || null : null,
+    schedule_end: effPlan === 'pro' ? input.schedule_end || null : null,
+  }
+
+  const supabase = getLiveSupabaseClient()
+  if (supabase) {
+    if (input.id) {
+      const { data, error } = await supabase
+        .from('links')
+        .update(payload)
+        .eq('id', input.id)
+        .eq('owner_id', userId)
+        .select('*')
+        .single()
+      if (error) throw new Error(error.message)
+      return data as LinkItem
+    } else {
+      const existing = await listOwnLinks(userId)
+      const nextPos = existing.length ? Math.max(...existing.map((x) => x.position)) + 1 : 0
+      const { data, error } = await supabase
+        .from('links')
+        .insert({ owner_id: userId, position: nextPos, ...payload })
+        .select('*')
+        .single()
+      if (error) throw new Error(error.message)
+      return data as LinkItem
+    }
+  }
+
+  if (isSandboxEnabled()) {
+    const db = readSbx()
+    const now = new Date().toISOString()
+    if (input.id) {
+      const idx = db.links.findIndex((l) => l.id === input.id && l.owner_id === userId)
+      if (idx < 0) throw new Error('Link tidak ditemukan.')
+      db.links[idx] = { ...db.links[idx], ...payload, updated_at: now }
+      writeSbx(db)
+      return db.links[idx]
+    } else {
+      const own = db.links.filter((l) => l.owner_id === userId)
+      const nextPos = own.length ? Math.max(...own.map((x) => x.position)) + 1 : 0
+      const created: LinkItem = {
+        id: crypto.randomUUID(),
+        owner_id: userId,
+        position: nextPos,
+        created_at: now,
+        updated_at: now,
+        ...payload,
+      }
+      db.links.push(created)
+      writeSbx(db)
+      return created
+    }
+  }
+
+  throw new Error('Supabase belum dikonfigurasi.')
+}
+
+export async function deleteOwnLink(userId: string, linkId: string): Promise<void> {
+  const supabase = getLiveSupabaseClient()
+  if (supabase) {
+    const { error } = await supabase.from('links').delete().eq('id', linkId).eq('owner_id', userId)
+    if (error) throw new Error(error.message)
+    return
+  }
+  if (isSandboxEnabled()) {
+    const db = readSbx()
+    db.links = db.links.filter((l) => !(l.id === linkId && l.owner_id === userId))
+    writeSbx(db)
+  }
+}
+
+export async function reorderOwnLinks(userId: string, orderedIds: string[]): Promise<void> {
+  const supabase = getLiveSupabaseClient()
+  if (supabase) {
+    await Promise.all(
+      orderedIds.map((id, idx) =>
+        supabase!.from('links').update({ position: idx }).eq('id', id).eq('owner_id', userId)
+      )
+    )
+    return
+  }
+  if (isSandboxEnabled()) {
+    const db = readSbx()
+    orderedIds.forEach((id, idx) => {
+      const hit = db.links.find((l) => l.id === id && l.owner_id === userId)
+      if (hit) hit.position = idx
+    })
+    writeSbx(db)
+  }
+}
+
+// ============================================================================
+// SUBSCRIPTIONS, ADMIN PLAN CONTROL & MIDTRANS CHECKOUT
+// ============================================================================
+
+export async function listOwnSubscriptions(userId: string): Promise<SubscriptionRecord[]> {
+  const supabase = getLiveSupabaseClient()
+  if (supabase) {
+    const { data } = await supabase
+      .from('subscriptions')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+      .limit(20)
+    return (data as SubscriptionRecord[]) || []
+  }
+  if (isSandboxEnabled()) {
+    return readSbx().subscriptions.filter((s) => s.user_id === userId)
+  }
+  return []
+}
+
+export async function createMidtransCheckout(
+  billing: BillingCycle
+): Promise<{ token: string; redirectUrl: string | null; orderId: string }> {
+  const supabase = getLiveSupabaseClient()
+  if (!supabase) {
+    throw new Error('Pembayaran otomatis memerlukan koneksi Supabase aktif. Hubungi admin via TikTok @luvenindonesia untuk aktivasi manual.')
+  }
+  const { data: sessionData } = await supabase.auth.getSession()
+  const jwt = sessionData.session?.access_token
+  if (!jwt) throw new Error('Silakan masuk akun terlebih dahulu.')
+
+  const resp = await fetch('/api/midtrans-create', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${jwt}`,
+    },
+    body: JSON.stringify({ billing }),
+  })
+  const data = await resp.json().catch(() => ({}))
+  if (!resp.ok) {
+    throw new Error(data.error || 'Gateway pembayaran belum aktif. Hubungi admin lewat TikTok @luvenindonesia.')
+  }
+  return data as { token: string; redirectUrl: string | null; orderId: string }
+}
+
+export async function adminSetUserPlan(
+  profileId: string,
+  plan: PlanId,
+  expiresAt: string | null,
+  amount = 0
+): Promise<void> {
+  const supabase = getLiveSupabaseClient()
+  if (supabase) {
+    const { error } = await supabase.rpc('admin_set_user_plan', {
+      p_user_id: profileId,
+      p_plan: plan,
+      p_expires_at: plan === 'pro' ? expiresAt : null,
+      p_amount: amount,
+    })
+    if (error) throw new Error(error.message)
+    return
+  }
+
+  if (isSandboxEnabled()) {
+    const db = readSbx()
+    if (!db.currentUserId || !db.admins.includes(db.currentUserId)) {
+      throw new Error('Akses ditolak.')
+    }
+    const hit = db.profiles.find((p) => p.id === profileId)
+    if (hit) {
+      hit.plan = plan
+      hit.plan_expires_at = plan === 'pro' ? expiresAt : null
+    }
+    db.subscriptions.unshift({
+      id: crypto.randomUUID(),
+      user_id: profileId,
+      plan,
+      status: plan === 'pro' ? 'active' : 'revoked',
+      amount,
+      provider: 'manual_admin',
+      provider_ref: null,
+      started_at: new Date().toISOString(),
+      expires_at: plan === 'pro' ? expiresAt : new Date().toISOString(),
+      created_at: new Date().toISOString(),
+    })
+    writeSbx(db)
+  }
+}
+
+// ============================================================================
 // EXPLORE & HOME PUBLIC FEED
 // ============================================================================
 
@@ -913,10 +1373,25 @@ export async function fetchPublicFeed(query: ExploreQuery = {}): Promise<{
 export async function recordAnalyticsEvent(
   ownerId: string,
   eventType: AnalyticsEventType,
-  templateId?: string | null
+  templateId?: string | null,
+  linkId?: string | null
 ): Promise<void> {
   if (!ownerId) return
   const bucket = getAnonymousRateBucket()
+  let referrerHost = ''
+  let deviceType: 'mobile' | 'desktop' = 'mobile'
+  const eventHour = new Date().getHours()
+
+  if (typeof window !== 'undefined') {
+    deviceType = window.innerWidth < 768 ? 'mobile' : 'desktop'
+    try {
+      if (document.referrer) {
+        referrerHost = new URL(document.referrer).hostname.replace(/^www\./, '').toLowerCase().slice(0, 64)
+      }
+    } catch {
+      referrerHost = ''
+    }
+  }
 
   const supabase = getLiveSupabaseClient()
   if (supabase) {
@@ -925,6 +1400,10 @@ export async function recordAnalyticsEvent(
       p_event_type: eventType,
       p_template_id: templateId ?? null,
       p_client_bucket: bucket,
+      p_link_id: linkId ?? null,
+      p_referrer_host: referrerHost,
+      p_device_type: deviceType,
+      p_event_hour: eventHour,
     })
     return
   }
@@ -936,16 +1415,24 @@ export async function recordAnalyticsEvent(
       (e) =>
         e.owner_id === ownerId &&
         (e.template_id || null) === (templateId || null) &&
+        (e.link_id || null) === (linkId || null) &&
         e.event_type === eventType &&
-        e.event_day === day
+        e.event_day === day &&
+        (e.referrer_host || '') === referrerHost &&
+        (e.device_type || 'mobile') === deviceType &&
+        (e.event_hour ?? 0) === eventHour
     )
     if (hit) hit.hit_count += 1
     else {
       db.events.push({
         owner_id: ownerId,
         template_id: templateId ?? null,
+        link_id: linkId ?? null,
         event_type: eventType,
         event_day: day,
+        referrer_host: referrerHost,
+        device_type: deviceType,
+        event_hour: eventHour,
         hit_count: 1,
       })
     }
@@ -955,44 +1442,72 @@ export async function recordAnalyticsEvent(
 
 export async function getCreatorAnalytics(
   ownerId: string,
-  ownTemplates: CreatorTemplate[]
+  ownTemplates: CreatorTemplate[],
+  ownLinks: LinkItem[] = [],
+  ownerUsername = ''
 ): Promise<CreatorAnalyticsSummary> {
-  const days30 = pastDaysIso(30)
-  const days7 = days30.slice(-7)
+  const days90 = pastDaysIso(90)
+  const days30 = days90.slice(-30)
+  const days7 = days90.slice(-7)
+  const min90 = days90[0]
   const min30 = days30[0]
   const min7 = days7[0]
 
   type RawEvent = {
     template_id: string | null
+    link_id?: string | null
     event_type: AnalyticsEventType
     event_day: string
+    referrer_host?: string
+    device_type?: 'mobile' | 'desktop'
+    event_hour?: number
     hit_count: number
   }
   let rows: RawEvent[] = []
+  let referralCount = 0
 
   const supabase = getLiveSupabaseClient()
   if (supabase) {
-    const { data } = await supabase
-      .from('events')
-      .select('template_id, event_type, event_day, hit_count')
-      .eq('owner_id', ownerId)
-    rows = (data as RawEvent[]) || []
+    const [{ data: evData }, { count: refCount }] = await Promise.all([
+      supabase
+        .from('events')
+        .select('template_id, link_id, event_type, event_day, referrer_host, device_type, event_hour, hit_count')
+        .eq('owner_id', ownerId),
+      ownerUsername
+        ? supabase
+            .from('profiles')
+            .select('id', { count: 'exact', head: true })
+            .eq('referred_by', ownerUsername)
+        : Promise.resolve({ count: 0 }),
+    ])
+    rows = (evData as RawEvent[]) || []
+    referralCount = refCount || 0
   } else if (isSandboxEnabled()) {
-    rows = readSbx().events.filter((e) => e.owner_id === ownerId)
+    const db = readSbx()
+    rows = db.events.filter((e) => e.owner_id === ownerId)
+    if (ownerUsername) {
+      referralCount = db.profiles.filter((p) => p.referred_by === ownerUsername).length
+    }
   }
 
   let totalProfileViews = 0
   let views7d = 0
   let views30d = 0
+  let views90d = 0
   let totalCapcutClicks = 0
   let totalTiktokClicks = 0
   let totalSocialClicks = 0
+  let totalLinkClicks = 0
   let clicks7d = 0
 
   const dailyMap = new Map<string, { views: number; clicks: number }>()
-  for (const d of days30) dailyMap.set(d, { views: 0, clicks: 0 })
+  for (const d of days90) dailyMap.set(d, { views: 0, clicks: 0 })
 
   const tplStats = new Map<string, { clicks: number; views: number }>()
+  const linkStats = new Map<string, number>()
+  const refMap = new Map<string, number>()
+  const deviceBreakdown = { mobile: 0, desktop: 0 }
+  const hourCounts = Array.from({ length: 24 }, (_, hour) => ({ hour, count: 0 }))
 
   for (const r of rows) {
     const c = Number(r.hit_count) || 0
@@ -1000,19 +1515,28 @@ export async function getCreatorAnalytics(
     const isClick =
       r.event_type === 'capcut_click' ||
       r.event_type === 'tiktok_click' ||
-      r.event_type === 'social_click'
+      r.event_type === 'social_click' ||
+      r.event_type === 'link_click'
 
     if (r.event_type === 'profile_view') {
       totalProfileViews += c
       if (r.event_day >= min7) views7d += c
       if (r.event_day >= min30) views30d += c
+      if (r.event_day >= min90) views90d += c
+      if (r.device_type === 'desktop') deviceBreakdown.desktop += c
+      else deviceBreakdown.mobile += c
+      const hostLabel = r.referrer_host || 'Langsung / Bio'
+      refMap.set(hostLabel, (refMap.get(hostLabel) || 0) + c)
+      const hr = Math.max(0, Math.min(23, Number(r.event_hour) || 0))
+      hourCounts[hr].count += c
     }
     if (r.event_type === 'capcut_click') totalCapcutClicks += c
     if (r.event_type === 'tiktok_click') totalTiktokClicks += c
     if (r.event_type === 'social_click') totalSocialClicks += c
+    if (r.event_type === 'link_click') totalLinkClicks += c
     if (isClick && r.event_day >= min7) clicks7d += c
 
-    if (r.event_day >= min30) {
+    if (r.event_day >= min90) {
       const slot = dailyMap.get(r.event_day) || { views: 0, clicks: 0 }
       if (isView) slot.views += c
       if (isClick) slot.clicks += c
@@ -1025,13 +1549,17 @@ export async function getCreatorAnalytics(
       if (isView) ts.views += c
       tplStats.set(r.template_id, ts)
     }
+    if (r.link_id && isClick) {
+      linkStats.set(r.link_id, (linkStats.get(r.link_id) || 0) + c)
+    }
   }
 
-  const series30d: DailyMetricPoint[] = days30.map((date) => ({
+  const series90d: DailyMetricPoint[] = days90.map((date) => ({
     date,
     ...(dailyMap.get(date) || { views: 0, clicks: 0 }),
   }))
-  const series7d = series30d.slice(-7)
+  const series30d = series90d.slice(-30)
+  const series7d = series90d.slice(-7)
 
   const titleById = new Map(ownTemplates.map((t) => [t.id, t.title]))
   const topTemplates = ownTemplates
@@ -1047,17 +1575,43 @@ export async function getCreatorAnalytics(
     .sort((a, b) => b.clicks - a.clicks || b.views - a.views)
     .slice(0, 5)
 
+  const topLinks = ownLinks
+    .filter((l) => l.type !== 'heading')
+    .map((l) => ({
+      link_id: l.id,
+      title: l.title,
+      type: l.type,
+      clicks: linkStats.get(l.id) || 0,
+    }))
+    .sort((a, b) => b.clicks - a.clicks)
+    .slice(0, 10)
+
+  const topReferrers = Array.from(refMap.entries())
+    .map(([host, count]) => ({ host, count }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 6)
+
+  const peakHours = hourCounts.filter((h) => h.count > 0).sort((a, b) => b.count - a.count).slice(0, 6)
+
   return {
     totalProfileViews,
     views7d,
     views30d,
+    views90d,
     totalCapcutClicks,
     totalTiktokClicks,
     totalSocialClicks,
+    totalLinkClicks,
     clicks7d,
     series7d,
     series30d,
+    series90d,
     topTemplates,
+    topLinks,
+    topReferrers,
+    deviceBreakdown,
+    peakHours,
+    referralCount,
   }
 }
 

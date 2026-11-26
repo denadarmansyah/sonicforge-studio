@@ -35,7 +35,7 @@ export default async function handler(req, res) {
     try {
       const endpoint = `${supabaseUrl}/rest/v1/profiles?username=eq.${encodeURIComponent(
         rawUsername
-      )}&is_banned=eq.false&select=username,display_name,bio,avatar_url,banner_url&limit=1`
+      )}&is_banned=eq.false&select=username,display_name,bio,avatar_url,banner_url,plan,plan_expires_at,settings&limit=1`
       const resp = await fetch(endpoint, {
         headers: {
           apikey: supabaseAnonKey,
@@ -46,11 +46,19 @@ export default async function handler(req, res) {
         const rows = await resp.json()
         const prof = Array.isArray(rows) ? rows[0] : null
         if (prof) {
-          title = `${prof.display_name} (@${prof.username}) — Template CapCut & TikTok | Luven`
+          const isPro =
+            prof.plan === 'pro' &&
+            (!prof.plan_expires_at || Date.parse(prof.plan_expires_at) > Date.now())
+          const customSeoTitle = isPro && prof.settings?.seoTitle ? String(prof.settings.seoTitle).trim() : ''
+          const customSeoDesc = isPro && prof.settings?.seoDescription ? String(prof.settings.seoDescription).trim() : ''
+          const customOgImg = isPro && prof.settings?.customOgImageUrl ? String(prof.settings.customOgImageUrl).trim() : ''
+
+          title = customSeoTitle || `${prof.display_name} (@${prof.username}) — Luven`
           description =
+            customSeoDesc ||
             prof.bio ||
-            `Kunjungi halaman resmi ${prof.display_name} (@${prof.username}) untuk memakai template CapCut terbarunya.`
-          image = prof.avatar_url || prof.banner_url || image
+            `Kunjungi halaman resmi ${prof.display_name} (@${prof.username}) untuk membuka tautan TikTok & template CapCut.`
+          image = customOgImg || prof.avatar_url || prof.banner_url || image
         }
       }
     } catch {

@@ -25,6 +25,7 @@ Platform promosi profil resmi dan direktori template untuk kreator **TikTok** & 
 1. Buka [Supabase Dashboard](https://supabase.com/dashboard) dan klik **New Project**.
 2. Setelah proyek aktif, buka menu **SQL Editor** -> **New query**.
 3. Salin seluruh isi berkas [`supabase/schema.sql`](./supabase/schema.sql), tempel ke editor, lalu klik **Run**.
+4. Kemudian buka **New query** lagi dan jalankan berkas migrasi [`supabase/migrations/002_plans_links.sql`](./supabase/migrations/002_plans_links.sql) untuk mengaktifkan sistem link-in-bio, paket `free`/`pro`, batas link sisi server, analitik PRO, dan tabel `subscriptions`.
    - Skrip ini bersifat *idempotent* dan langsung menyiapkan:
      - Tabel `profiles`, `templates`, `events`, `reports`, `admins`, dan `contact_messages`.
      - Kebijakan **Row Level Security (RLS)** ketat untuk seluruh tabel.

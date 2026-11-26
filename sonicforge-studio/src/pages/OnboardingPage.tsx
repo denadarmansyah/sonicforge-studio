@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Navigate, useNavigate } from 'react-router-dom'
 import { ArrowLeft, ArrowRight, AtSign, CheckCircle2, Loader2 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
-import { checkUsernameAvailability, saveOwnProfile } from '../lib/platformStore'
+import { checkUsernameAvailability, clearPendingReferral, getPendingReferral, saveOwnProfile } from '../lib/platformStore'
 import { useDocumentMeta } from '../lib/seo'
 import { CREATOR_CATEGORIES, normalizeUsername, validateAllowedUrl } from '../lib/validators'
 import { TikTokGlyph } from '../ui/BrandIcons'
@@ -93,14 +93,17 @@ export function OnboardingPage() {
     setSaving(true)
     setFormErr('')
     try {
+      const refUsername = getPendingReferral()
       await saveOwnProfile(user.id, {
         username,
         display_name: displayName,
         bio,
         category,
         tiktok_url: tiktokUrl,
+        referred_by: refUsername,
         onboarding_completed: true,
       })
+      clearPendingReferral()
       await refreshAuth()
       pushToast('Profil kreator siap digunakan!')
       navigate('/dashboard', { replace: true })

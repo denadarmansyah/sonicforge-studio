@@ -1,3 +1,6 @@
+import { PlanId } from '../config/plans'
+import { ProfileSettings, ProfileThemeConfig } from '../lib/themeConfig'
+
 export interface Profile {
   id: string
   username: string
@@ -14,6 +17,41 @@ export interface Profile {
   is_featured: boolean
   is_banned: boolean
   onboarding_completed: boolean
+  plan: PlanId
+  plan_expires_at: string | null
+  theme: ProfileThemeConfig
+  settings: ProfileSettings
+  referred_by: string | null
+  created_at: string
+  updated_at?: string
+}
+
+export type LinkItemType =
+  | 'link'
+  | 'capcut'
+  | 'tiktok'
+  | 'youtube'
+  | 'instagram'
+  | 'whatsapp'
+  | 'website'
+  | 'heading'
+  | 'announcement'
+  | 'embed_tiktok'
+  | 'embed_youtube'
+
+export interface LinkItem {
+  id: string
+  owner_id: string
+  type: LinkItemType
+  title: string
+  url: string | null
+  thumbnail_url: string | null
+  position: number
+  is_active: boolean
+  is_featured: boolean
+  group_id: string | null
+  schedule_start: string | null
+  schedule_end: string | null
   created_at: string
   updated_at?: string
 }
@@ -44,6 +82,7 @@ export type AnalyticsEventType =
   | 'capcut_click'
   | 'tiktok_click'
   | 'social_click'
+  | 'link_click'
 
 export interface DailyMetricPoint {
   date: string
@@ -55,18 +94,44 @@ export interface CreatorAnalyticsSummary {
   totalProfileViews: number
   views7d: number
   views30d: number
+  views90d: number
   totalCapcutClicks: number
   totalTiktokClicks: number
   totalSocialClicks: number
+  totalLinkClicks: number
   clicks7d: number
   series7d: DailyMetricPoint[]
   series30d: DailyMetricPoint[]
+  series90d: DailyMetricPoint[]
   topTemplates: {
     template_id: string
     title: string
     clicks: number
     views: number
   }[]
+  topLinks: {
+    link_id: string
+    title: string
+    type: LinkItemType
+    clicks: number
+  }[]
+  topReferrers: { host: string; count: number }[]
+  deviceBreakdown: { mobile: number; desktop: number }
+  peakHours: { hour: number; count: number }[]
+  referralCount: number
+}
+
+export interface SubscriptionRecord {
+  id: string
+  user_id: string
+  plan: PlanId
+  status: 'active' | 'pending' | 'expired' | 'cancelled' | 'revoked'
+  amount: number
+  provider: string
+  provider_ref: string | null
+  started_at: string
+  expires_at: string | null
+  created_at: string
 }
 
 export interface AbuseReport {

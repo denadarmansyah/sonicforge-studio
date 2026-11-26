@@ -1,9 +1,11 @@
-export type ImageKind = 'avatar' | 'banner' | 'thumbnail'
+export type ImageKind = 'avatar' | 'banner' | 'thumbnail' | 'background' | 'og'
 
 const TARGET_SPECS: Record<ImageKind, { maxW: number; maxH: number; label: string }> = {
   avatar: { maxW: 512, maxH: 512, label: 'Avatar' },
   banner: { maxW: 1600, maxH: 534, label: 'Banner' },
   thumbnail: { maxW: 800, maxH: 1000, label: 'Thumbnail' },
+  background: { maxW: 1200, maxH: 1800, label: 'Latar Profil' },
+  og: { maxW: 1200, maxH: 630, label: 'Gambar Open Graph' },
 }
 
 const ALLOWED_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp'])

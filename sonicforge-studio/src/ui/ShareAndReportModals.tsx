@@ -12,11 +12,15 @@ export function QrShareModal({
   onClose,
   username,
   displayName,
+  fgColor,
+  bgColor,
 }: {
   open: boolean
   onClose: () => void
   username: string
   displayName: string
+  fgColor?: string
+  bgColor?: string
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const { pushToast } = useToast()
@@ -33,15 +37,15 @@ export function QrShareModal({
         width: 240,
         margin: 2,
         color: {
-          dark: STUDIO_THEME.base,
-          light: STUDIO_THEME.ink,
+          dark: fgColor || STUDIO_THEME.base,
+          light: bgColor || STUDIO_THEME.ink,
         },
       })
     })
     return () => {
       cancelled = true
     }
-  }, [open, profileUrl])
+  }, [open, profileUrl, fgColor, bgColor])
 
   const copyLink = async () => {
     try {

@@ -26,7 +26,7 @@ export const POPULAR_TEMPLATE_TAGS = [
 
 export const RESERVED_USERNAMES = new Set([
   'admin', 'administrator', 'root', 'moderator', 'mod', 'support', 'help',
-  'studio', 'template', 'templates', 'explore', 'discover', 'search',
+  'studio', 'template', 'templates', 'explore', 'discover', 'search', 'pricing',
   'login', 'signin', 'signup', 'register', 'logout', 'auth', 'onboarding',
   'dashboard', 'settings', 'account', 'profile', 'profiles', 'user', 'users',
   'privacy', 'terms', 'tos', 'dmca', 'contact', 'about', 'faq', 'legal',
@@ -87,14 +87,17 @@ export function validateUsernameFormat(raw: string): { ok: boolean; normalized: 
   return { ok: true, normalized: u }
 }
 
-export type SocialPlatform = 'tiktok' | 'capcut' | 'instagram' | 'youtube' | 'website'
+export type SocialPlatform = 'tiktok' | 'capcut' | 'instagram' | 'youtube' | 'whatsapp' | 'website' | 'link'
 
-const PLATFORM_HOSTS: Record<Exclude<SocialPlatform, 'website'>, RegExp> = {
+const PLATFORM_HOSTS: Record<Exclude<SocialPlatform, 'website' | 'link'>, RegExp> = {
   tiktok: /^(?:(?:www|m|vm|vt)\.)?tiktok\.com$/i,
   capcut: /^(?:[a-z0-9-]+\.)?(?:capcut\.com|capcutshare\.com)$/i,
   instagram: /^(?:www\.)?instagram\.com$/i,
   youtube: /^(?:(?:www|m)\.)?(?:youtube\.com|youtu\.be)$/i,
+  whatsapp: /^(?:wa\.me|api\.whatsapp\.com|chat\.whatsapp\.com)$/i,
 }
+
+const BLOCKED_LINK_HOSTS = new Set(['localhost', '127.0.0.1', '0.0.0.0', 'bit.ly', 'tinyurl.com'])
 
 export function validateAllowedUrl(
   raw: string,
@@ -109,13 +112,15 @@ export function validateAllowedUrl(
     return { ok: true, clean: null }
   }
 
-  // Allow user to paste @handle for TikTok or Instagram and expand safely to official HTTPS URL
   let candidate = trimmed
   if (platform === 'tiktok' && /^@[a-zA-Z0-9._]{2,32}$/.test(candidate)) {
     candidate = `https://www.tiktok.com/${candidate}`
   } else if (platform === 'instagram' && /^@[a-zA-Z0-9._]{2,32}$/.test(candidate)) {
     candidate = `https://www.instagram.com/${candidate.slice(1)}`
-  } else if (!/^https?:\/\//i.test(candidate) && /^[a-z0-9.-]+\.[a-z]{2,}\/.+/i.test(candidate)) {
+  } else if (platform === 'whatsapp' && /^\+?[0-9]{8,15}$/.test(candidate.replace(/[\s-]/g, ''))) {
+    const digits = candidate.replace(/[^\d]/g, '')
+    candidate = `https://wa.me/${digits}`
+  } else if (!/^https?:\/\//i.test(candidate) && /^[a-z0-9.-]+\.[a-z]{2,}(?:\/.*)?$/i.test(candidate)) {
     candidate = `https://${candidate}`
   }
 
@@ -139,13 +144,18 @@ export function validateAllowedUrl(
   }
 
   const host = parsed.hostname.toLowerCase()
-  if (platform !== 'website') {
+  if (BLOCKED_LINK_HOSTS.has(host) || host.endsWith('.local') || host.endsWith('.internal')) {
+    return { ok: false, clean: null, error: 'Domain tautan ini tidak diizinkan.' }
+  }
+
+  if (platform !== 'website' && platform !== 'link') {
     if (!PLATFORM_HOSTS[platform].test(host)) {
-      const names: Record<Exclude<SocialPlatform, 'website'>, string> = {
+      const names: Record<Exclude<SocialPlatform, 'website' | 'link'>, string> = {
         tiktok: 'tiktok.com, vm.tiktok.com, atau vt.tiktok.com',
         capcut: 'capcut.com (tautan resmi template CapCut)',
         instagram: 'instagram.com',
         youtube: 'youtube.com atau youtu.be',
+        whatsapp: 'wa.me atau whatsapp.com',
       }
       return {
         ok: false,
@@ -161,12 +171,45 @@ export function validateAllowedUrl(
       }
     }
   } else {
-    if (!/^[a-z0-9.-]+\.[a-z]{2,}$/i.test(host) || host === 'localhost') {
+    if (!/^[a-z0-9.-]+\.[a-z]{2,}$/i.test(host)) {
       return { ok: false, clean: null, error: 'Masukkan domain situs publik yang valid.' }
     }
   }
 
   return { ok: true, clean: parsed.toString() }
+}
+
+export function extractYouTubeEmbedUrl(rawUrl: string | null): string | null {
+  if (!rawUrl) return null
+  try {
+    const u = new URL(rawUrl)
+    const h = u.hostname.toLowerCase()
+    let id = ''
+    if (h === 'youtu.be') {
+      id = u.pathname.split('/').filter(Boolean)[0] || ''
+    } else if (h.includes('youtube.com')) {
+      if (u.pathname.startsWith('/shorts/')) id = u.pathname.split('/')[2] || ''
+      else if (u.pathname.startsWith('/embed/')) id = u.pathname.split('/')[2] || ''
+      else id = u.searchParams.get('v') || ''
+    }
+    if (!/^[a-zA-Z0-9_-]{6,20}$/.test(id)) return null
+    return `https://www.youtube-nocookie.com/embed/${id}`
+  } catch {
+    return null
+  }
+}
+
+export function extractTikTokEmbedUrl(rawUrl: string | null): string | null {
+  if (!rawUrl) return null
+  try {
+    const u = new URL(rawUrl)
+    if (!u.hostname.toLowerCase().includes('tiktok.com')) return null
+    const m = u.pathname.match(/\/video\/(\d{6,25})/)
+    if (!m) return null
+    return `https://www.tiktok.com/embed/v2/${m[1]}`
+  } catch {
+    return null
+  }
 }
 
 export const REPORT_REASONS = [

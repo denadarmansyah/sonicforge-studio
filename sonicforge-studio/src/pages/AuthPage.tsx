@@ -1,8 +1,9 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { KeyRound, Lock, Mail, UserPlus } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import {
+  captureReferralCode,
   requestPasswordReset,
   signInWithEmail,
   signInWithGoogleOAuth,
@@ -27,6 +28,12 @@ export function AuthPage({ mode }: { mode: 'login' | 'register' | 'forgot' }) {
   const [error, setError] = useState('')
   const [verifyNotice, setVerifyNotice] = useState(false)
   const [resetSent, setResetSent] = useState(false)
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search)
+    const ref = params.get('ref')
+    if (ref) captureReferralCode(ref)
+  }, [location.search])
 
   useDocumentMeta({
     title:
