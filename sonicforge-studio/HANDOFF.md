@@ -1,138 +1,96 @@
 # HANDOFF — Luven (`luven.my.id`)
 
-Dokumen serah terima (*handoff*) untuk melanjutkan pengembangan, konfigurasi backend, pengujian akhir, dan *deployment* proyek **Luven**.
+Dokumen serah terima (*handoff*) terbaru pada cabang kerja **`wip-linkinbio-pro`** (belum di-*merge* atau di-*push* ke `main`).
 
-> **Struktur Direktori Penting:**  
-> Repositori Git berada di folder induk, sedangkan root aplikasi Vite + React + Vercel (`package.json`, `vercel.json`, `src/`, `api/`) berada di subfolder `sonicforge-studio/`. Salinan berkas `HANDOFF.md`, `README.md`, dan `supabase/schema.sql` juga ditempatkan di folder induk agar mudah ditemukan dari mana saja.
-
----
-
-## 1. Ringkasan Arsitektur & Stack
-
-| Lapisan | Teknologi & Implementasi |
-| :--- | :--- |
-| **Framework & Build** | Vite 5 + React 18 + TypeScript (`~5.5.4`) |
-| **Styling & Design System** | Tailwind CSS 4 (`@tailwindcss/vite`) dengan *single source of truth* CSS tokens di `src/index.css` (`@theme`) dan pembaca token dinamis untuk `<canvas>` Studio di `src/theme/studioTheme.ts`. |
-| **Routing & Animasi** | `react-router-dom` v7 (rute *lazy-loaded* di `src/App.tsx`), `framer-motion` (reordering kartu & transisi), serta `lenis` (*lazy-loaded* khusus pointer desktop `>=1024px` di `src/ui/SiteLayout.tsx`). |
-| **Ikon & Utilitas UI** | `lucide-react`, ikon SVG kustom merek di `src/ui/BrandIcons.tsx`, serta `qrcode` (*lazy-loaded* saat modal QR dibuka di `src/ui/ShareAndReportModals.tsx`). |
-| **Backend & Database** | `@supabase/supabase-js` v2 untuk Auth, Postgres, RPC, dan Storage. Didukung *dual data adapter* di `src/lib/platformStore.ts`: mode **Supabase Live** (utama) dan mode **Sandbox Lokal** (`localStorage`) khusus `localhost`/`127.0.0.1` atau saat env belum diset untuk pengujian UI tanpa data palsu bawaan. |
-| **Hosting & Serverless (Vercel)** | Konfigurasi `vercel.json` + Vercel Serverless Functions: `api/profile-og.js` (injeksi *Open Graph* dinamis untuk `/@:username`) dan `api/sitemap.js` (generator `/sitemap.xml` dinamis). |
-| **Alat Audio Studio (`/studio`)** | Web Audio API multitrack editor + ekstraksi audio dari video (`.mp4`, `.mov`, `.webm`, `.mkv`, `.avi`, `.m4v`) via `decodeAudioData` dengan fallback `@ffmpeg/ffmpeg` (`public/ffmpeg/`), serta ekspor WAV 16/24-bit dan MP3 192/320 kbps lewat Web Worker (`src/workers/mp3Encoder.worker.ts`, `@breezystack/lamejs`). |
+> **Struktur Direktori:**  
+> Repositori Git berada di folder induk, sedangkan aplikasi utama Vite + React + Vercel (`package.json`, `vercel.json`, `src/`, `api/`, `public/`, `supabase/`) berada di subfolder `sonicforge-studio/`. Salinan `HANDOFF.md`, `README.md`, dan `supabase/migrations/002_plans_links.sql` juga diselaraskan di folder induk.
 
 ---
 
-## 2. Daftar Halaman & Fitur yang Sudah Selesai
+## 1. Status Setiap Bagian Tugas
 
-### Rute & Halaman (`src/pages/`)
-- **Beranda (`/`, `HomePage.tsx`)**: Hero berdesain perangkat audio/DJ, pratinjau profil yang ditandai jelas `Contoh Tampilan`, seksi direktori komunitas langsung dari DB (dengan *empty state* jujur saat DB kosong), seksi alur kerja 3 langkah kontras terang, bento fitur, dan FAQ akordeon.
-- **Jelajah (`/explore`, `ExplorePage.tsx`)**: Pencarian teks (`q`), filter kategori & tag, pengurutan (`Terbaru` / `Populer Minggu Ini`), strip *Kreator Pilihan* (berdasarkan kolom `is_featured`), paginasi, modal detail template, dan modal pelaporan.
-- **Profil Publik (`/@username`, `PublicProfilePage.tsx` + `api/profile-og.js`)**: Tampilan *link-in-bio* responsif yang tetap seimbang meskipun tanpa banner atau dengan 0–1 template, badge terverifikasi, tautan keluar aman (`rel="noopener noreferrer nofollow ugc"`), pelacakan klik anonim, tombol Bagikan/QR, dan modal Laporkan.
-- **Autentikasi (`/login`, `/register`, `/forgot-password`, `AuthPage.tsx`)**: Login email+sandi, pendaftaran kreator dengan notifikasi verifikasi email, permintaan reset sandi, tombol Google OAuth (tampil saat Supabase terkonfigurasi), dan `SupabaseSetupPanel` bila environment belum siap.
-- **Onboarding 3 Langkah (`/onboarding`, `OnboardingPage.tsx`)**:
-  1. Klaim username dengan pengecekan real-time ke RPC/store serta pemblokiran *reserved* & pola impersonasi (`validators.ts`).
-  2. Pengisian nama tampilan, kategori utama, dan bio (maks 160 karakter).
-  3. Penautan akun TikTok (mendukung input `@handle` maupun URL HTTPS resmi).
-- **Dasbor Kreator (`/dashboard`, `DashboardPage.tsx`)**: Tab Kelola Template (CRUD, validasi domain CapCut/TikTok, *drag-and-drop reorder* via `Reorder.Group` + tombol naik/turun aksesibel, sembunyikan/tampilkan), Edit Profil dengan pratinjau langsung (*side-by-side* di desktop, tab *Pratinjau* di mobile), kompresi gambar klien otomatis ke WebP (`imageProcessor.ts`: avatar 512×512, banner 1600×534, thumbnail 800×1000, maks 2 MB), analitik 7/30 hari & template terpopuler, serta unduh QR PNG (`QrShareModal`).
-- **Panel Moderasi (`/admin`, `AdminPage.tsx`)**: Khusus user yang terdaftar di `public.admins`; menampilkan antrean laporan masuk (selesaikan/abaikan/hapus template/ban akun), manajemen kreator (verifikasi, jadikan pilihan, ban/pulihkan), dan kurasi status template.
-- **Alat Audio Studio (`/studio`, `StudioPage.tsx`)**: Editor audio multitrack + impor video-ke-audio + rekaman mikrofon + ekspor WAV/MP3 yang telah disatukan dengan token tema utama.
-- **Halaman Legal, Kontak, 404 & SEO (`SupportPages.tsx`, `public/robots.txt`, `api/sitemap.js`)**: `/privacy`, `/terms` (termasuk daftar konten terlarang & alur DMCA), `/contact` (formulir ber-honeypot + rate-limit ke RPC `submit_contact_message`), halaman 404, `robots.txt`, dan dynamic `sitemap.xml`.
-
-### Keamanan, Database & Build
-- **Skema Postgres Lengkap (`supabase/schema.sql`)**: Tabel `admins`, `profiles`, `templates`, `events` (agregat harian tanpa IP/data pribadi pengunjung), `reports`, `contact_messages`, `private.rate_buckets`; fungsi validator `is_valid_username`, domain URL whitelist; trigger `guard_profile_privileged_columns` & `guard_template_write`; kebijakan **RLS aktif di semua tabel** menggunakan `private.is_admin()` dan `(select auth.uid())`; RPC `check_username_available`, `record_event`, `submit_report`, `submit_contact_message`; serta bucket Storage `avatars`, `banners`, `thumbnails`.
-- **Header & Routing Produksi (`vercel.json`)**: HSTS, `X-Content-Type-Options`, `X-Frame-Options: DENY`, `Referrer-Policy`, `Permissions-Policy`, CSP yang mengizinkan Supabase & WASM, MIME `application/wasm` untuk FFmpeg, serta *rewrite* `/@:username` dan `/sitemap.xml`.
-- **Optimasi Bundle & Aksesibilitas**: Pemisahan chunk (`react-vendor`, `motion`, `supabase`, *lazy* `lenis` & `qrcode`), penghapusan nesting interaktif `<Link><Button>` menjadi `LinkButton` ber-target sentuh `>=44px`, dan penyesuaian kontras teks kecil ke `text-fg-sec`.
+### A. Sudah Selesai & Terverifikasi
+1. **Halaman Profil Publik Link-in-Bio (`/@username`)**
+   - Dirender oleh `src/pages/PublicProfilePage.tsx` dan `src/ui/ProfileViewCard.tsx` (`PublicProfileRenderer` dalam mode `fullPage`) **tanpa** navbar maupun footer situs Luven (fokus penuh ke kreator).
+   - Mendukung avatar, nama, lencana terverifikasi, bio, baris ikon sosial, daftar blok link (`link`, `capcut`, `tiktok`, `youtube`, `instagram`, `whatsapp`, `website`, `heading`, serta khusus Pro: `announcement`, `embed_tiktok`, `embed_youtube`), grup lipat (*collapsible*), link sorotan, gerbang konten sensitif opsional, galeri template CapCut 4:5, tombol **Bagikan & QR**, tautan kecil **Laporkan halaman ini**, serta blok referral bawah **Buat halaman kamu di Luven** (`/register?ref=username`).
+   - Pada paket **Free**, blok referral Luven selalu tampil; pada paket **Pro**, kreator dapat menyembunyikannya. Jika masa aktif Pro habis atau dicabut admin, halaman otomatis kembali ke tema monokrom Free tanpa menghapus data link atau pengaturan Pro yang tersimpan.
+2. **Manajemen Link, Studio Tampilan Pro, Analitik 90 Hari, & Tagihan (`/dashboard`)**
+   - `src/pages/DashboardPage.tsx` memiliki tab **Link Bio** (CRUD, *drag-and-drop* `Reorder.Group` + tombol urut atas/bawah, penghitung kuota `8 link aktif` Free, penjadwalan tayang, grup lipat, link sorotan), **Tampilan** (`src/ui/AppearanceStudio.tsx`: 24+ preset tema, warna HEX, gradasi 2–3 titik, pola latar, unggah foto latar + *overlay/blur*, pemeriksa kontras WCAG AA + tombol perbaiki kontras 1 klik, 12 pasangan font Google Fonts, gaya tombol/avatar, SEO/OG kustom, warna QR kustom, preset pribadi, + pratinjau HP *real-time*), **Template CapCut**, **Profil**, **Analitik** (7/30/90 hari, klik per link, sumber *referrer*, perangkat Mobile vs Desktop, jam puncak, dan penghitung referral `?ref=`), serta **Paket & Tagihan** (pengingat kedaluwarsa `<= 7` hari & riwayat `subscriptions`).
+3. **Sistem Paket, Penegakan Server, Pembayaran, & Halaman `/pricing`**
+   - Sumber konfigurasi tunggal di `src/config/plans.ts` (`PLANS.free` vs `PLANS.pro`, harga awal *placeholder* `Rp 39.000/bulan` & `Rp 390.000/tahun`).
+   - Halaman `src/pages/PricingPage.tsx` (`/pricing`), modal `src/ui/UpgradeProModal.tsx`, kontrol aktivasi manual **Mode A** (`Pro 30h`, `Pro 1th`, `Cabut Pro`) di `src/pages/AdminPage.tsx` + kontak admin resmi TikTok `@luvenindonesia`, serta endpoint **Mode B** Vercel Serverless Midtrans Snap di `api/midtrans-create.js` dan `api/midtrans-webhook.js`.
+   - Injeksi Open Graph dinamis di `api/profile-og.js` menghormati `seoTitle`, `seoDescription`, dan `customOgImageUrl` khusus kreator Pro aktif.
+   - Pemulihan kata sandi lanjutan `/login?mode=update-password` pada `src/pages/AuthPage.tsx` sudah aktif.
+4. **Standarisasi Komponen Tombol, Token Warna, & Ilustrasi PNG 2D (Aturan A–E)**
+   - Seluruh tombol di aplikasi (termasuk `/studio`) memakai komponen terpusat di `src/ui/primitives.tsx` (`Button`, `LinkButton`, `ExternalLinkButton`, `IconButton`, `UnstyledButton`) dengan ukuran `sm=32px`, `md=40px`, `lg=48px`, radius seragam `10px`, area sentuh `>= 44×44px`, dan *loading spinner* tanpa perubahan lebar tombol (`0` tag `<button>` mentah di luar `primitives.tsx`).
+   - Logo dan favicon Luven (`Logo.tsx`, `src/assets/brand/*`, `public/brand/*`, `public/favicon.*`, `public/og-image.png`, `public/icon-*.png`) **tidak disentuh sama sekali** (`git diff` bersih).
+   - 3 set ilustrasi 2D editorial monokrom berhasil digenerate AI dan dioptimasi ke PNG `@1x` (`800w`) & `@2x` (`1600w`) di bawah `150 KB` di `public/illustrations/` (`hero-main`, `pricing-hero`, `feature-template`). 11 slot ilustrasi lainnya telah dipasangi komponen `EditorialIllustration` berasio tetap tanpa *layout shift* (daftar prompt siap pakai tercantum di Bagian 4).
 
 ---
 
-## 3. Fitur yang Setengah Jadi (Parsial)
+## 2. Verifikasi & Skor Lighthouse Mobile
 
-1. **Alur Lanjutan Reset Kata Sandi (`?mode=update-password`)**  
-   - Fungsi `requestPasswordReset` di `src/lib/platformStore.ts` mengarahkan tautan pemulihan email ke `/login?mode=update-password`.  
-   - Namun `src/pages/AuthPage.tsx` saat ini baru memiliki UI untuk `login`, `register`, dan `forgot`, sehingga form untuk memasukkan kata sandi baru (`supabase.auth.updateUser({ password })`) setelah pengguna mengklik tautan dari email belum diimplementasikan.
-2. **Pengujian Backend Terhadap Supabase Produksi vs Sandbox**  
-   - Seluruh query, RPC, dan kebijakan RLS di `src/lib/platformStore.ts` dan `supabase/schema.sql` sudah ditulis, tetapi alur pengguna yang sudah diuji sejauh ini berjalan menggunakan **Mode Sandbox Lokal** di browser (`?sandbox=1`), belum diuji *end-to-end* langsung ke proyek Supabase live.
-3. **Audit Multi-Breakpoint & Lighthouse Mobile**  
-   - Skrip Playwright untuk 108 kombinasi viewport (`360px`–`1920px`, *landscape*, dan `200%` zoom) dan skrip audit Lighthouse mobile sudah disiapkan di direktori *scratch* sesi sebelumnya, namun proses audit terhenti di bagian akhir E2E sebelum tahap pengecekan viewport & Lighthouse sempat diselesaikan.
-
----
-
-## 4. Yang Belum Dikerjakan
-
-1. Menjalankan serta memverifikasi `supabase/schema.sql` langsung di proyek Supabase target, menambahkan minimal satu akun ke tabel `public.admins`, lalu melakukan uji E2E penuh pada environment **Supabase Live** (auth, verifikasi email, unggah gambar Storage ke bucket, RLS, dan fungsi serverless Vercel).
-2. Menambahkan mode form **`update-password`** pada `/login?mode=update-password` di `AuthPage.tsx` agar alur "Lupa kata sandi?" tuntas sampai pengguna bisa menyimpan password baru.
-3. Menuntaskan eksekusi audit **Playwright 108 kombinasi viewport** (memeriksa screenshot & memastikan nol *horizontal overflow*) serta menjalankan **Lighthouse Mobile** pada rute `/`, `/explore`, dan `/@username` (target Performance >=90, Accessibility >=95, Best Practices >=95, SEO >=95).
-4. Menyediakan gambar raster `og:image` statis (PNG/WebP `1200×630`) untuk pratinjau beranda apabila diperlukan — saat ini fallback `og:image` di `index.html` dan `api/profile-og.js` masih memakai `/favicon.svg` (sebagian platform chat lebih memprioritaskan PNG/JPG dibanding SVG untuk kartu tautan utama).
-5. Menetapkan email dukungan produksi yang aktif pada `VITE_CONTACT_EMAIL` (default saat ini adalah `halo@luven.my.id`) dan meng-*commit* perubahan kerja yang masih berada di *working tree* Git.
+Seluruh pemeriksaan otomatis telah dijalankan dan lulus bersih:
+- **Typecheck & Build**: `npm run typecheck` (`0` error) dan `npm run build` selesai bersih dalam `3.19s`.
+- **Audit Statis Kode**: `0` emoji, `0` `<button>` di luar `src/ui/primitives.tsx`, `0` ilustrasi SVG/CSS buatan tangan, `0` warna hex liar di luar token `src/index.css` & konfigurasi tema Pro `src/lib/themeConfig.ts`.
+- **Uji E2E & Keamanan (Playwright Chromium)**: Penolakan URL `javascript:`, batas 8 link aktif Free (judul bagian dikecualikan), isolasi `/@username` tanpa navbar/footer Luven, pelacakan referral `?ref=username`, netralisasi payload XSS `<img onerror=...>` & `<script>`, aktivasi Pro 30 hari dari `/admin`, penambahan link ke-9 + sembunyikan CTA Luven saat Pro, serta pencabutan Pro kembali ke tampilan Free tanpa kehilangan data (`0` error konsol).
+- **Uji Responsif 7 Breakpoint (`360, 390, 430, 768, 1024, 1280, 1536`)**: Diuji pada 8 rute utama (`56` kombinasi viewport) dengan **`0` horizontal overflow**.
+- **Lighthouse Mobile (Produksi Lokal Terkompresi)**:
+  - `/` (Beranda): **Performance 97 · Accessibility 100 · Best Practices 100 · SEO 100** (`CLS 0.0001`)
+  - `/pricing` (Harga): **Performance 93 · Accessibility 100 · Best Practices 100 · SEO 100** (`CLS 0`)
+  - `/explore` (Jelajah): **Performance 96 · Accessibility 100 · Best Practices 100 · SEO 100** (`CLS 0.030`)
+  - `/@kreatoruji` (Link-in-Bio): **Performance 97 · Accessibility 100 · Best Practices 100 · SEO 100** (`CLS 0.027`)
 
 ---
 
-## 5. Cara Menjalankan & Menguji
+## 3. Langkah Wajib di Supabase & Variabel Lingkungan
 
-Dari folder ini (`sonicforge-studio/sonicforge-studio/`):
+### A. Migrasi SQL di Supabase SQL Editor
+Berkas [`supabase/migrations/002_plans_links.sql`](./supabase/migrations/002_plans_links.sql) telah diperiksa penuh: **100% idempoten dan aman** (`add column if not exists`, `create table if not exists`, `create or replace function`, tanpa `drop table` atau penghapusan baris data; bahkan ketika paket Pro kedaluwarsa/dicabut, JSON `theme` Pro milik kreator tetap dipertahankan di kolom `profiles.theme`).
 
-> **Catatan Windows PowerShell:** Apabila eksekusi `npm` diblokir kebijakan skrip (`npm.ps1`), jalankan `npm.cmd` atau lewat `cmd /c`.
+1. Buka **Supabase Dashboard -> SQL Editor -> New query**.
+2. Jika proyek baru dan belum pernah menjalankan skema awal, jalankan [`supabase/schema.sql`](./supabase/schema.sql) terlebih dahulu.
+3. Tempel seluruh isi [`supabase/migrations/002_plans_links.sql`](./supabase/migrations/002_plans_links.sql) lalu klik **Run**.
 
-### Pengembangan Lokal
-1. Pasang dependensi:
-   ```bash
-   npm install
-   ```
-2. Salin `.env.example` menjadi `.env.local` dan isi variabel yang dibutuhkan (atau tambahkan `?sandbox=1` di URL `http://localhost:5173/?sandbox=1` untuk mencoba alur di browser lokal tanpa menyentuh database live).
-   - *Catatan:* di `localhost` / `127.0.0.1`, jika `?sandbox=1` pernah diaktifkan (`localStorage['luven.dev_sandbox_enabled'] = '1'`), data akan memakai Sandbox lokal; gunakan `?sandbox=0` atau tombol **Matikan & Reset Sandbox** untuk kembali ke Supabase live.
-3. Jalankan server dev:
-   ```bash
-   npm run dev
-   ```
+### B. Variabel Lingkungan (Nama Saja — Tanpa Nilai Rahasia)
+- **Wajib**: `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_SITE_URL`, `VITE_CONTACT_EMAIL`.
+- **Opsional (Mode B — Pembayaran Otomatis Midtrans di Vercel Serverless, JANGAN beri awalan `VITE_` pada secret)**:
+  - `SUPABASE_SERVICE_ROLE_KEY`
+  - `MIDTRANS_SERVER_KEY`
+  - `MIDTRANS_IS_PRODUCTION`
+  - `VITE_MIDTRANS_CLIENT_KEY` *(opsional bila memuat skrip Snap di klien; jika mengaktifkan popup Snap langsung di halaman, tambahkan domain Snap Midtrans ke header `Content-Security-Policy` di `vercel.json`, atau gunakan `redirect_url` halaman pembayaran Midtrans yang sudah didukung langsung tanpa ubah CSP).*
 
-### Pemeriksaan Tipe & Build Produksi
+---
+
+## 4. Hal yang Belum Selesai / Membutuhkan Keputusan Pemilik
+
+1. **Keputusan Harga Final & Kuota Paket (`src/config/plans.ts`)**
+   - Saat ini harga Pro diset sebagai angka *placeholder* (`Rp 39.000/bulan` dan `Rp 390.000/tahun`, `isPlaceholderPrice: true`) dan batas Free adalah `8` link aktif. Ubah langsung di `src/config/plans.ts` (dan sesuaikan angka `8` pada `guard_link_write()` di SQL bila batas Free diubah).
+2. **Sisa 11 Slot Ilustrasi PNG 2D AI (Terbatas Kuota Model Gambar `HTTP 429 RESOURCE_EXHAUSTED`)**
+   - Enam berkas PNG sudah tersedia di `public/illustrations/`: `hero-main-800.png` (`37.4 KB`), `hero-main-1600.png` (`128.7 KB`), `pricing-hero-800.png` (`38.4 KB`), `pricing-hero-1600.png` (`121.5 KB`), `feature-template-800.png` (`39.8 KB`), dan `feature-template-1600.png` (`144.2 KB`).
+   - Untuk melengkapi 11 slot sisanya, simpan berkas PNG `@1x` (`-800.png`) dan `@2x` (`-1600.png`) ke `sonicforge-studio/public/illustrations/` lalu tambahkan slug-nya ke `AVAILABLE_EDITORIAL_SLUGS` di `src/ui/primitives.tsx`:
+     - `feature-profile` (`16:9`, `800×450` & `1600×900`): *"Clean modern 2D monochrome editorial illustration on solid #111111 dark background, crisp uniform black-white-grayscale linework, minimalist mobile link-in-bio profile screen surrounded by clean link blocks, a QR code square, and a star emblem, generous negative space, flat 2D, no text, no hands, no brand logos."*
+     - `feature-soundlab` (`16:9`, `800×450` & `1600×900`): *"Clean modern 2D monochrome editorial illustration on solid #111111 dark background, studio headphones resting beside clean concentric sound waves and an equalizer fader module, flat 2D linework, generous negative space, no text, no hands, no logos."*
+     - `feature-studio` (`16:9`, `800×450` & `1600×900`): *"Clean modern 2D monochrome editorial illustration on solid #111111 dark background, minimalist multitrack audio timeline interface on a sleek monitor with studio speaker monitors and waveform blocks, flat 2D linework, no text, no hands, no logos."*
+     - `plan-free` (`20:9`, `800×360` & `1600×720`): *"Clean modern 2D monochrome editorial illustration on solid #0A0A0A dark background, single minimalist smartphone displaying a clean monochrome profile card and compact stacked link bars, generous negative space, flat 2D, no text, no logos."*
+     - `plan-pro` (`20:9`, `800×360` & `1600×720`): *"Clean modern 2D monochrome editorial illustration on solid #0A0A0A dark background, customized smartphone profile with layered swatch cards, fountain pen nib, and rising analytics bar chart in crisp grayscale linework, flat 2D, no text, no logos."*
+     - `empty-explore` (`16:9`, `800×450` & `1600×900`): *"Clean modern 2D monochrome editorial illustration on solid #0A0A0A dark background, minimalist compass resting on a clean open grid horizon, generous negative space, flat 2D, no text, no logos."*
+     - `empty-template` (`16:9`, `800×450` & `1600×900`): *"Clean modern 2D monochrome editorial illustration on solid #111111 dark background, open minimalist folder beside an empty vertical video frame with dotted trim guides, flat 2D, no text, no logos."*
+     - `empty-dashboard` (`16:9`, `800×450` & `1600×900`): *"Clean modern 2D monochrome editorial illustration on solid #111111 dark background, clean studio desk notebook and unlinked chain clasp ready to connect, flat 2D, no text, no logos."*
+     - `cta-banner` (`20:9`, `800×360` & `1600×720`): *"Clean modern 2D monochrome editorial illustration on solid #0A0A0A dark background, wide minimalist creator desk with ring light, smartphone on tripod, microphone boom arm, and subtle waveform line, flat 2D, no text, no logos."*
+     - `auth-main` (`4:3`, `800×600` & `1600×1200`): *"Clean modern 2D monochrome editorial illustration on solid #111111 dark background, minimalist creator pass card next to a smartphone silhouette and studio headphones, flat 2D, no text, no logos."*
+     - `error-404` (`16:9`, `800×450` & `1600×900`): *"Clean modern 2D monochrome editorial illustration on solid #111111 dark background, unplugged quarter-inch audio jack cable resting beside a broken audio waveform line, flat 2D, no text, no logos."*
+3. **Uji End-to-End pada Supabase Live & Midtrans Produksi**
+   - Setelah menjalankan `002_plans_links.sql` di Supabase Dashboard, uji pembuatan link, unggah gambar latar Pro, aktivasi admin di `/admin`, serta webhook Midtrans (bila Mode B diaktifkan).
+
+---
+
+## 5. Cara Menjalankan
+
 ```bash
-npm run typecheck
-npm run build
-npm run preview
+cd sonicforge-studio
+npm install
+npm run dev        # Server pengembangan lokal (tambahkan ?sandbox=1 untuk uji lokal tanpa DB live)
+npm run typecheck  # Pemeriksaan tipe TypeScript
+npm run build      # Build produksi ke dist/
 ```
-*Status terakhir yang terverifikasi sebelum handoff:* `tsc --noEmit` dan `vite build` lulus bersih tanpa error (`dist/` terbangun dalam 3.44s).
-
-### Pengujian End-to-End yang Disarankan
-- Uji daftar -> onboarding 3 langkah -> unggah avatar/banner/thumbnail (pastikan konversi WebP) -> tambah/urutkan/sembunyikan template CapCut -> unduh QR PNG.
-- Uji kunjungan `/@username` (termasuk *hard refresh* di Vercel untuk memverifikasi `api/profile-og.js` dan rewrite `/@:username`), kirim laporan `"Laporkan"`, cek angka di tab Analitik Dasbor.
-- Uji `/admin` (dengan akun yang sudah masuk ke `public.admins`): selesaikan laporan, beri lencana verifikasi, jadikan pilihan, ban akun (pastikan `/@username` langsung menampilkan tidak ditemukan), lalu pulihkan akun.
-- Uji `/studio`: impor berkas audio/video (`.mp4`/`.wav`/`.mp3`) dan ekspor WAV/MP3.
-
----
-
-## 6. Variabel Lingkungan yang Dibutuhkan (Nama Saja)
-
-Daftar nama variabel yang perlu dikonfigurasi pada `.env.local` (lokal) serta **Vercel Project Settings -> Environment Variables**:
-
-- `VITE_SUPABASE_URL` — URL proyek Supabase.
-- `VITE_SUPABASE_ANON_KEY` — Publishable / Anon Key Supabase untuk akses klien.
-- `VITE_SITE_URL` — URL kanonik domain produksi (contoh penggunaan: pembentukan tautan `/@username`, QR code, canonical SEO, sitemap).
-- `VITE_CONTACT_EMAIL` — Alamat email kontak resmi yang ditampilkan pada halaman `/contact`, `/privacy`, `/terms`, dan footer.
-
-*(Opsional untuk serverless function non-Vite bila dipisahkan di Vercel: `api/profile-og.js` dan `api/sitemap.js` juga mendukung fallback pembacaan nama `SUPABASE_URL` dan `SUPABASE_ANON_KEY`. Jangan pernah menggunakan `service_role` key pada variabel berawalan `VITE_`.)*
-
----
-
-## 7. Status Setup Supabase & Google Login
-
-### Yang Sudah Ada di Kode & Lingkungan Lokal
-- Berkas skema [`supabase/schema.sql`](./supabase/schema.sql) sudah ditulis lengkap dan *idempotent* (tabel, index, trigger proteksi kolom admin, RLS di seluruh tabel, RPC ber-rate-limit, serta Storage buckets & policies).
-- Berkas `.env.example` sudah tersedia dan `.gitignore` sudah mengecualikan `.env`, `.env.local`, `node_modules`, `dist`, serta `.vercel`.
-- Berkas `.env.local` di mesin pengembangan lokal sudah ada dan memuat `VITE_SUPABASE_URL` serta `VITE_SUPABASE_ANON_KEY` (tidak pernah di-commit).
-- Klien `src/lib/supabaseClient.ts` serta fungsi login Google (`signInWithGoogleOAuth()`) dan tombol **"Masuk dengan Google"** pada `src/pages/AuthPage.tsx` sudah terpasang dengan redirect ke `${window.location.origin}/onboarding`.
-
-### Yang Masih Perlu Dikonfirmasi / Dilakukan di Dashboard Eksternal
-Selama sesi ini, koneksi MCP Supabase gagal karena token OAuth tidak tersedia (`No such refresh token found`), sehingga **langkah-langkah di Dashboard eksternal berikut belum terkonfirmasi dan wajib dicek langsung**:
-1. **Jalankan SQL Schema**: Buka Supabase Dashboard -> SQL Editor -> tempel dan jalankan seluruh isi `supabase/schema.sql`.
-2. **Konfigurasi Auth Redirect URLs**: Di Supabase -> Authentication -> URL Configuration, set Site URL ke `https://luven.my.id` dan tambahkan Redirect URL `https://luven.my.id/**` serta `http://localhost:5173/**`.
-3. **Google OAuth Provider**: Di Google Cloud Console buat OAuth 2.0 Client ID (Web application) dengan *Authorized redirect URI* `https://<PROJECT_REF>.supabase.co/auth/v1/callback`, lalu masukkan *Client ID* & *Client Secret* ke Supabase -> Authentication -> Providers -> Google dan aktifkan provider.
-4. **Daftarkan Admin Pertama**: Setelah akun pemilik mendaftar via `/register` dan menyelesaikan onboarding, jalankan SQL `insert into public.admins (user_id, note) ...` sesuai panduan di `README.md`.
-
----
-
-## 8. Masalah yang Belum Beres & Hal yang Perlu Diperhatikan
-
-1. **Form Update Password Belum Tersedia**: Tautan email reset sandi mengarah ke `/login?mode=update-password`, namun `AuthPage.tsx` belum merender form ubah kata sandi.
-2. **Skrip Audit E2E Terhenti pada Selector Tab Admin**: Pada uji Playwright di sandbox lokal (`full_audit.mjs`), langkah A sampai F serta sebagian langkah G (memuat `/admin` dan mengabaikan laporan) berjalan dengan nol error konsol maupun HTTP. Pengujian berhenti karena skrip mencari tab berlabel `/Pengguna/i`, padahal teks tab di `AdminPage.tsx` adalah `Kreator`. Akibatnya, uji Ban/Unban, uji regresi `/studio`, audit responsive 108 kombinasi viewport, dan audit Lighthouse belum tuntas dijalankan ulang pasca-refactor `LinkButton`.
-3. **Akses MCP Supabase Terputus**: Pemanggilan tool Supabase MCP gagal dengan galat autentikasi `404 Not Found: No such refresh token found`, sehingga status tabel/RLS/provider di instance Supabase remote belum terinspeksi otomatis.
-4. **Perubahan Git Belum Di-commit**: Seluruh penambahan/modifikasi platform baru serta penghapusan aset landing page lama masih berada pada *working tree* Git (belum di-commit ke branch `main`). Saat deploy ke Vercel nanti, pastikan pengaturan **Root Directory** mengarah ke `sonicforge-studio`, **Framework Preset = Vite**, **Build Command = `npm run build`**, dan **Output Directory = `dist`**.

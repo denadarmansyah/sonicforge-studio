@@ -181,11 +181,11 @@ export function HomePage() {
                     >
                       <motion.span
                         className={`inline-block ${isHighlight ? 'text-accent' : ''}`}
-                        initial={reduce ? false : { y: '108%', opacity: 0 }}
-                        animate={{ y: '0%', opacity: 1 }}
+                        initial={reduce ? false : { y: '24%' }}
+                        animate={{ y: '0%' }}
                         transition={{
-                          duration: 0.62,
-                          delay: 0.08 + idx * 0.045,
+                          duration: 0.38,
+                          delay: idx * 0.025,
                           ease: EASE_SMOOTH,
                         }}
                       >
@@ -196,21 +196,11 @@ export function HomePage() {
                 })}
               </h1>
 
-              <motion.p
-                initial={reduce ? false : { opacity: 0, y: 14 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: 0.42, ease: EASE_SMOOTH }}
-                className="mt-5 max-w-[54ch] text-[clamp(1rem,0.9vw+0.8rem,1.1875rem)] leading-relaxed text-balance text-fg-sec"
-              >
+              <p className="mt-5 max-w-[54ch] text-[clamp(1rem,0.9vw+0.8rem,1.1875rem)] leading-relaxed text-balance text-fg-sec">
                 Buat halaman <span className="font-mono text-fg">luven.my.id/@username</span> dalam hitungan menit. Tempel akun TikTok, susun katalog template CapCut Anda, dan bagikan satu tautan bersih di bio.
-              </motion.p>
+              </p>
 
-              <motion.div
-                initial={reduce ? false : { opacity: 0, y: 14 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: 0.52, ease: EASE_SMOOTH }}
-                className="mt-7 flex flex-col items-stretch gap-3 min-[480px]:flex-row min-[480px]:flex-wrap min-[480px]:items-center"
-              >
+              <div className="mt-7 flex flex-col items-stretch gap-3 min-[480px]:flex-row min-[480px]:flex-wrap min-[480px]:items-center">
                 <LinkButton to={primaryHref} variant="primary" size="lg" className="w-full min-[480px]:w-auto">
                   <UserPlus size={17} />
                   <span>{user ? 'Buka Dasbor Kamu' : 'Buat halaman kamu'}</span>
@@ -221,15 +211,10 @@ export function HomePage() {
                   <Compass size={17} />
                   <span>Jelajahi kreator</span>
                 </LinkButton>
-              </motion.div>
+              </div>
 
               {/* Clean Typographic Spec Strip (Zero CSS-shape illustrations) */}
-              <motion.div
-                initial={reduce ? false : { opacity: 0, y: 14 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.65, delay: 0.62, ease: EASE_SMOOTH }}
-                className="mt-9 grid grid-cols-1 gap-2.5 sm:grid-cols-3"
-              >
+              <div className="mt-9 grid grid-cols-1 gap-2.5 sm:grid-cols-3">
                 {[
                   { icon: Smartphone, label: 'SETUP PROFIL', value: '< 2 MENIT' },
                   { icon: Compass, label: 'RASIO KARTU', value: '4:5 VERTIKAL' },
@@ -253,16 +238,11 @@ export function HomePage() {
                     </div>
                   )
                 })}
-              </motion.div>
+              </div>
             </div>
 
             {/* Right Column: Hero 2D Editorial Illustration + Authentic Live Profile Mockup */}
-            <motion.div
-              initial={reduce ? false : { opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.75, delay: 0.25, ease: EASE_SMOOTH }}
-              className="relative space-y-4"
-            >
+            <div className="relative space-y-4">
               <EditorialIllustration
                 slug="hero-main"
                 alt="Ilustrasi meja kreator video pendek dengan ponsel ber-timeline vertikal, headphone studio, dan mikrofon"
@@ -292,7 +272,7 @@ export function HomePage() {
                   />
                 </div>
               </div>
-            </motion.div>
+            </div>
           </div>
         </div>
       </section>

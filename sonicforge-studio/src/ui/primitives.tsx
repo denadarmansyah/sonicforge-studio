@@ -671,7 +671,9 @@ export function EditorialIllustration({
       ) : (
         <picture className="block h-full w-full">
           <source srcSet={`${src1x} 800w, ${src2x} 1600w`} sizes={sizes} type="image/png" />
-          {!loaded && <span aria-hidden="true" className="absolute inset-0 animate-pulse bg-elevated" />}
+          {!priority && !loaded && (
+            <span aria-hidden="true" className="absolute inset-0 animate-pulse bg-elevated" />
+          )}
           <img
             src={src1x}
             alt={alt}
@@ -679,11 +681,11 @@ export function EditorialIllustration({
             height={spec.h}
             loading={priority ? 'eager' : 'lazy'}
             fetchPriority={priority ? 'high' : undefined}
-            decoding="async"
+            decoding={priority ? 'sync' : 'async'}
             onLoad={() => setLoaded(true)}
             onError={() => setFailed(true)}
-            className={`h-full w-full object-cover transition-opacity duration-300 ${
-              loaded ? 'opacity-100' : 'opacity-0'
+            className={`h-full w-full object-cover ${
+              priority ? 'opacity-100' : `transition-opacity duration-300 ${loaded ? 'opacity-100' : 'opacity-0'}`
             }`}
           />
         </picture>
