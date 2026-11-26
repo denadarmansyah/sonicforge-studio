@@ -28,7 +28,7 @@ export default async function handler(req, res) {
 
   let title = rawUsername ? `@${rawUsername} — Luven` : 'Luven — Kreator TikTok & CapCut'
   let description = 'Lihat profil resmi dan koleksi template CapCut di Luven (luven.my.id).'
-  let image = `${siteUrl}/favicon.svg`
+  let image = `${siteUrl}/og-image.png?v=2`
   const canonicalUrl = `${siteUrl}/@${encodeURIComponent(rawUsername)}`
 
   if (rawUsername && supabaseUrl && supabaseAnonKey) {

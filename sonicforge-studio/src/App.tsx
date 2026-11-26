@@ -2,6 +2,7 @@ import { lazy, Suspense } from 'react'
 import { BrowserRouter, Route, Routes, useParams } from 'react-router-dom'
 import { AuthProvider } from './context/AuthContext'
 import { HomePage } from './pages/HomePage'
+import { Logo } from './ui/Logo'
 import { ToastProvider } from './ui/primitives'
 
 const ExplorePage = lazy(() =>
@@ -46,12 +47,27 @@ function HandleOrNotFoundRoute() {
   return <NotFoundPage />
 }
 
+function LoadingScreen() {
+  return (
+    <div
+      role="status"
+      aria-label="Memuat Luven"
+      className="flex min-h-dvh w-full flex-col items-center justify-center gap-4 bg-bg text-fg"
+    >
+      <Logo variant="symbol" size={44} animate />
+      <span className="font-mono text-[11px] uppercase tracking-[0.2em] text-fg-sec">
+        Memuat...
+      </span>
+    </div>
+  )
+}
+
 export default function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
         <ToastProvider>
-          <Suspense fallback={<div className="min-h-dvh w-full bg-bg" />}>
+          <Suspense fallback={<LoadingScreen />}>
             <Routes>
               <Route path="/" element={<HomePage />} />
               <Route path="/explore" element={<ExplorePage />} />

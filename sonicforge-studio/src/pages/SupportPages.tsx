@@ -4,6 +4,7 @@ import { ArrowLeft, CheckCircle2, Mail, Send } from 'lucide-react'
 import { submitContactForm } from '../lib/platformStore'
 import { useDocumentMeta } from '../lib/seo'
 import { CONTACT_EMAIL } from '../lib/supabaseClient'
+import { Logo } from '../ui/Logo'
 import { Button, Card, Input, LinkButton, Textarea, useToast } from '../ui/primitives'
 import { SiteLayout } from '../ui/SiteLayout'
 
@@ -287,7 +288,10 @@ export function NotFoundPage() {
   return (
     <SiteLayout>
       <div className="mx-auto max-w-[480px] px-4 py-20 text-center">
-        <span className="rounded-full border border-edge bg-surface px-3 py-1 font-mono text-[12px] text-accent">
+        <div className="mb-5 flex justify-center text-fg">
+          <Logo variant="symbol" size={44} />
+        </div>
+        <span className="rounded-full border border-edge bg-surface px-3 py-1 font-mono text-[12px] text-fg-sec">
           ERROR 404
         </span>
         <h1 className="mt-4 text-[28px] font-extrabold tracking-[-0.03em] text-fg">

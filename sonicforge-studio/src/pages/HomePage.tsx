@@ -19,6 +19,7 @@ import { fetchPublicFeed, recordAnalyticsEvent } from '../lib/platformStore'
 import { useDocumentMeta } from '../lib/seo'
 import { CreatorTemplate, Profile } from '../lib/types'
 import { HardwareKnob, VerifiedBadgeIcon } from '../ui/BrandIcons'
+import { Logo } from '../ui/Logo'
 import { Avatar, Badge, Card, EASE_SMOOTH, LinkButton } from '../ui/primitives'
 import { PublicProfileRenderer, TemplateCard } from '../ui/ProfileViewCard'
 import { SiteLayout } from '../ui/SiteLayout'
@@ -154,7 +155,7 @@ export function HomePage() {
                 transition={{ duration: 0.5, ease: EASE_SMOOTH }}
                 className="inline-flex items-center gap-2.5 rounded-full border border-edge bg-surface px-3.5 py-1.5 font-mono text-[11.5px] text-fg-sec"
               >
-                <span className="h-2 w-2 rounded-full bg-accent" />
+                <Logo variant="symbol" size={20} animate className="text-fg" />
                 <span>DIREKTORI KREATOR TIKTOK & CAPCUT</span>
               </motion.div>
 

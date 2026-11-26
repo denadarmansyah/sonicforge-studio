@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { AudioWaveform, Download, Loader2, Mic, MoreHorizontal, Pause, Play, Repeat, SkipBack, SlidersHorizontal, Square, Upload, X } from 'lucide-react'
+import { Download, Loader2, Mic, MoreHorizontal, Pause, Play, Repeat, SkipBack, SlidersHorizontal, Square, Upload, X } from 'lucide-react'
 import { engine } from '../audio/audioEngine'
 import { fmt } from '../utils/format'
 import { EXPORT_FORMAT_OPTIONS, ExportFormat } from '../utils/audioExporter'
+import { Logo } from '../ui/Logo'
 import { LevelMeter } from './LevelMeter'
 
 interface Props {
@@ -29,9 +30,9 @@ export function TopBar(p: Props) {
       <header className="flex min-w-0 items-center justify-between gap-1.5 border-b border-line bg-panel px-2 sm:gap-2 sm:px-2.5 lg:gap-3 lg:px-3">
         {/* Brand + Project Name */}
         <div className="flex min-w-0 flex-1 items-center gap-1.5 sm:gap-2 lg:flex-none lg:gap-3">
-          <Link to="/" className="flex shrink-0 items-center gap-1.5 text-ink no-underline focus-visible:outline-1 focus-visible:outline-accent lg:gap-2" title="Kembali ke Beranda Luven">
-            <AudioWaveform size={16} className="text-accent" />
-            <span className="text-[11.5px] font-semibold tracking-[0.08em] sm:text-[12px]">LUVEN</span>
+          <Link to="/" className="flex shrink-0 items-center text-ink no-underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent" title="Kembali ke Beranda Luven">
+            <Logo variant="symbol" size={22} className="min-[400px]:hidden" />
+            <Logo variant="horizontal" size={98} className="hidden min-[400px]:inline-block" />
           </Link>
           <input
             className="inp min-w-0 flex-1 max-w-[140px] text-ellipsis px-1.5 text-[11px] sm:max-w-[180px] sm:px-2 sm:text-[12px] lg:w-36 lg:max-w-none xl:w-44"

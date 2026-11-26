@@ -14,7 +14,7 @@ import {
 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { CONTACT_EMAIL } from '../lib/supabaseClient'
-import { LuvenWordmark } from './BrandIcons'
+import { Logo } from './Logo'
 import { Avatar, Button, Dropdown, EASE_SMOOTH, IconButton, LinkButton } from './primitives'
 
 const NAV_LINKS = [
@@ -148,9 +148,9 @@ export function SiteLayout({
             <Link
               to="/"
               aria-label="Beranda Luven"
-              className="inline-flex min-h-11 items-center rounded-lg no-underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent"
+              className="inline-flex min-h-11 items-center rounded-lg px-1 text-fg no-underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent"
             >
-              <LuvenWordmark />
+              <Logo variant="horizontal" size={116} />
             </Link>
 
             {/* Desktop Menu with Shared layoutId Active Indicator */}
@@ -294,7 +294,7 @@ export function SiteLayout({
             >
               <div>
                 <div className="flex h-14 items-center justify-between border-b border-edge pb-2">
-                  <LuvenWordmark />
+                  <Logo variant="horizontal" size={112} className="text-fg" />
                   <IconButton
                     ref={closeBtnRef}
                     label="Tutup menu navigasi"
@@ -398,7 +398,7 @@ export function SiteLayout({
           <div className="mx-auto max-w-[1280px] px-4 py-12 md:px-6 lg:px-8">
             <div className="grid grid-cols-1 gap-8 md:grid-cols-12">
               <div className="md:col-span-5">
-                <LuvenWordmark size="lg" />
+                <Logo variant="horizontal" size={128} className="text-fg" />
                 <p className="mt-3 max-w-[38ch] text-[14px] leading-relaxed text-fg-sec">
                   Halaman profil resmi dan direktori template untuk kreator TikTok serta CapCut di Indonesia.
                 </p>

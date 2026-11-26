@@ -53,7 +53,7 @@
       "destination": "/api/profile-og?username=:username"
     },
     {
-      "source": "/((?!api/|assets/|ffmpeg/|favicon\\.svg|robots\\.txt).*)",
+      "source": "/((?!api/|assets/|brand/|ffmpeg/|favicon\\.(?:svg|ico)|apple-touch-icon\\.png|icon-.*\\.png|og-image\\.png|site\\.webmanifest|robots\\.txt).*)",
       "destination": "/index.html"
     }
   ]

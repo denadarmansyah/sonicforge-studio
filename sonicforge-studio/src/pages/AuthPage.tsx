@@ -10,6 +10,7 @@ import {
 } from '../lib/platformStore'
 import { useDocumentMeta } from '../lib/seo'
 import { isSupabaseConfigured } from '../lib/supabaseClient'
+import { Logo } from '../ui/Logo'
 import { Button, Card, Input, LinkButton, useToast } from '../ui/primitives'
 import { SupabaseSetupPanel } from '../ui/ShareAndReportModals'
 import { SiteLayout } from '../ui/SiteLayout'
@@ -90,14 +91,17 @@ export function AuthPage({ mode }: { mode: 'login' | 'register' | 'forgot' }) {
       ) : (
         <div className="mx-auto flex max-w-[440px] flex-col justify-center px-4 py-12 sm:py-16">
           <Card className="p-6 sm:p-8">
-            <span className="font-mono text-[11px] uppercase tracking-wider text-accent">
-              {mode === 'register'
-                ? 'Pendaftaran Kreator'
-                : mode === 'forgot'
-                ? 'Pemulihan Akses'
-                : 'Akses Kreator'}
-            </span>
-            <h1 className="mt-2 text-[24px] font-extrabold tracking-[-0.03em] text-fg">
+            <div className="mb-4 flex items-center justify-between">
+              <Logo variant="horizontal" size={104} className="text-fg" />
+              <span className="font-mono text-[11px] uppercase tracking-wider text-fg-sec">
+                {mode === 'register'
+                  ? 'Pendaftaran Kreator'
+                  : mode === 'forgot'
+                  ? 'Pemulihan Akses'
+                  : 'Akses Kreator'}
+              </span>
+            </div>
+            <h1 className="m-0 text-[24px] font-extrabold tracking-[-0.03em] text-fg">
               {mode === 'register'
                 ? 'Buat halaman Luven kamu'
                 : mode === 'forgot'
