@@ -1078,7 +1078,7 @@ export function AdminPage() {
                   </div>
                 ) : overview ? (
                   <>
-                    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-5">
+                    <div className="grid grid-cols-1 gap-3 min-[360px]:grid-cols-2 sm:grid-cols-3 xl:grid-cols-5">
                       {[
                         {
                           label: 'Total Pengguna',
@@ -1111,7 +1111,7 @@ export function AdminPage() {
                           <span className="mt-1.5 block font-mono text-[24px] font-bold tabular-nums text-fg">
                             {m.val}
                           </span>
-                          <span className="mt-1 block truncate font-mono text-[11px] text-fg-sec" title={m.sub}>
+                          <span className="mt-1 block font-mono text-[11px] leading-snug text-fg-sec">
                             {m.sub}
                           </span>
                         </Card>
@@ -2674,22 +2674,24 @@ export function AdminPage() {
               key={it.id}
               variant={section === it.id ? 'secondary' : 'ghost'}
               size="sm"
+              stackVertical
               onClick={() => setSection(it.id)}
-              className="h-12! flex-col! gap-0.5! px-1! text-[11px]!"
+              className="h-12! px-1! text-[10.5px]!"
             >
               <Icon size={16} />
-              <span>{it.label}</span>
+              <span className="max-w-full truncate">{it.label}</span>
             </Button>
           )
         })}
         <Button
           variant={mobileNavOpen ? 'secondary' : 'ghost'}
           size="sm"
+          stackVertical
           onClick={() => setMobileNavOpen(true)}
-          className="h-12! flex-col! gap-0.5! px-1! text-[11px]!"
+          className="h-12! px-1! text-[10.5px]!"
         >
           <Menu size={16} />
-          <span>Semua</span>
+          <span className="max-w-full truncate">Semua</span>
         </Button>
       </nav>
 

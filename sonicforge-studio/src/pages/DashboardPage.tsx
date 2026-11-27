@@ -722,21 +722,28 @@ export function DashboardPage() {
           </div>
         )}
 
-        {/* Mobile/Tablet Horizontal Section Bar (<1024px) + Desktop Sidebar Layout */}
-        <div className="mt-6 lg:hidden">
-          <Tabs<DashTab>
-            layoutGroupId="dash-main-tabs"
-            active={activeTab}
-            onChange={setActiveTab}
-            tabs={[
-              { id: 'links', label: 'Link Bio', count: activeNonHeadingCount },
+        {/* Mobile/Tablet Section Selector (<1024px) + Desktop Sidebar Layout */}
+        <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:hidden">
+          {(
+            [
+              { id: 'links', label: `Link Bio (${activeNonHeadingCount})` },
               { id: 'appearance', label: 'Tampilan' },
-              { id: 'templates', label: 'Template CapCut', count: templates.length },
-              { id: 'profile', label: 'Profil' },
+              { id: 'templates', label: `CapCut (${templates.length})` },
+              { id: 'profile', label: 'Profil & Sosial' },
               { id: 'analytics', label: 'Analitik' },
               { id: 'billing', label: 'Paket & Tagihan' },
-            ]}
-          />
+            ] as const
+          ).map((t) => (
+            <Button
+              key={t.id}
+              variant={activeTab === t.id ? 'primary' : 'secondary'}
+              size="sm"
+              onClick={() => setActiveTab(t.id)}
+              className="px-2.5! text-[12.5px]!"
+            >
+              <span className="truncate">{t.label}</span>
+            </Button>
+          ))}
         </div>
 
         <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-[220px_minmax(0,1fr)] lg:items-start">
@@ -1706,11 +1713,12 @@ export function DashboardPage() {
               key={item.id}
               variant={on ? 'secondary' : 'ghost'}
               size="sm"
+              stackVertical
               onClick={() => setActiveTab(item.id)}
-              className="h-12! flex-col! gap-0.5! px-1! text-[11px]!"
+              className="h-12! px-1! text-[10.5px]!"
             >
               <Icon size={16} />
-              <span>{item.label}</span>
+              <span className="max-w-full truncate">{item.label}</span>
             </Button>
           )
         })}

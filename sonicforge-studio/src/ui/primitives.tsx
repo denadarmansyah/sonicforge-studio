@@ -43,6 +43,7 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   size?: ButtonSize
   loading?: boolean
   fullWidth?: boolean
+  stackVertical?: boolean
 }
 
 const VARIANT_CLASSES: Record<ButtonVariant, string> = {
@@ -94,6 +95,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
     size = 'md',
     loading = false,
     fullWidth = false,
+    stackVertical = false,
     disabled,
     className = '',
     children,
@@ -109,13 +111,17 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
       type={type}
       disabled={isDisabled}
       aria-busy={loading || undefined}
-      className={`inline-flex items-center justify-center border whitespace-nowrap select-none transition-[transform,background-color,border-color,color,opacity] duration-150 enabled:cursor-pointer enabled:active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-not-allowed disabled:opacity-45 ${
+      className={`inline-flex min-w-0 items-center justify-center border whitespace-nowrap select-none transition-[transform,background-color,border-color,color,opacity] duration-150 enabled:cursor-pointer enabled:active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-not-allowed disabled:opacity-45 ${
         VARIANT_CLASSES[variant]
       } ${SIZE_CLASSES[size]} ${fullWidth ? 'w-full' : ''} ${className}`}
       {...rest}
     >
       {loading && <Loader2 size={16} aria-hidden="true" className="absolute shrink-0 animate-spin" />}
-      <span className={`inline-flex items-center justify-center gap-2 ${loading ? 'opacity-0' : ''}`}>
+      <span
+        className={`inline-flex max-w-full min-w-0 items-center justify-center ${
+          stackVertical ? 'flex-col gap-1 leading-none' : 'gap-2'
+        } ${loading ? 'opacity-0' : ''}`}
+      >
         {children}
       </span>
     </button>
