@@ -8,18 +8,28 @@ import {
   signInWithEmail,
   signInWithGoogleOAuth,
   signUpWithEmail,
+  updateOwnPassword,
 } from '../lib/platformStore'
 import { useDocumentMeta } from '../lib/seo'
-import { getLiveSupabaseClient, isSupabaseConfigured } from '../lib/supabaseClient'
+import { isSandboxEnabled, isSupabaseConfigured } from '../lib/supabaseClient'
 import { GoogleGlyph } from '../ui/BrandIcons'
 import { hasIllustration, Illustration } from '../ui/Illustration'
 import { Logo } from '../ui/Logo'
-import { Button, Card, Input, LinkButton, useToast } from '../ui/primitives'
+import {
+  Button,
+  Card,
+  Input,
+  LinkButton,
+  PasswordInput,
+  PasswordStrengthMeter,
+  Skeleton,
+  useToast,
+} from '../ui/primitives'
 import { SupabaseSetupPanel } from '../ui/ShareAndReportModals'
 import { SiteLayout } from '../ui/SiteLayout'
 
 export function AuthPage({ mode }: { mode: 'login' | 'register' | 'forgot' }) {
-  const { user, profile, backendReady, refreshAuth } = useAuth()
+  const { loading: authLoading, user, hasClaimedUsername, backendReady, refreshAuth } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
   const { pushToast } = useToast()
@@ -30,6 +40,7 @@ export function AuthPage({ mode }: { mode: 'login' | 'register' | 'forgot' }) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [busy, setBusy] = useState(false)
+  const [googleBusy, setGoogleBusy] = useState(false)
   const [error, setError] = useState('')
   const [verifyNotice, setVerifyNotice] = useState(false)
   const [resetSent, setResetSent] = useState(false)
@@ -42,19 +53,19 @@ export function AuthPage({ mode }: { mode: 'login' | 'register' | 'forgot' }) {
 
   useDocumentMeta({
     title: isUpdatePassword
-      ? 'Simpan Kata Sandi Baru — Luven'
+      ? 'Simpan Password Baru — Luven'
       : mode === 'register'
-        ? 'Daftar Kreator — Luven'
+        ? 'Daftar Akun — Luven'
         : mode === 'forgot'
-          ? 'Atur Ulang Kata Sandi — Luven'
+          ? 'Atur Ulang Password — Luven'
           : 'Masuk Akun — Luven',
     description:
-      'Masuk atau buat halaman link-in-bio kreator TikTok & template CapCut kamu di Luven (luven.my.id).',
+      'Masuk dengan Google atau email untuk mengelola halaman profil dan template CapCut di Luven (luven.my.id).',
     path: location.pathname,
   })
 
-  if (user && !verifyNotice && !isUpdatePassword) {
-    return <Navigate to={profile?.onboarding_completed ? '/dashboard' : '/onboarding'} replace />
+  if (!authLoading && user && !verifyNotice && !isUpdatePassword) {
+    return <Navigate to={hasClaimedUsername ? '/dashboard' : '/onboarding'} replace />
   }
 
   const handleSubmit = async (e: FormEvent) => {
@@ -63,35 +74,33 @@ export function AuthPage({ mode }: { mode: 'login' | 'register' | 'forgot' }) {
     setBusy(true)
     try {
       if (isUpdatePassword) {
-        if (password.length < 8) {
-          throw new Error('Kata sandi baru minimal 8 karakter.')
-        }
-        const sb = getLiveSupabaseClient()
-        if (!sb) throw new Error('Koneksi Supabase belum aktif.')
-        const { error: upErr } = await sb.auth.updateUser({ password })
-        if (upErr) throw new Error(upErr.message)
-        pushToast('Kata sandi berhasil diperbarui.')
-        navigate('/dashboard', { replace: true })
+        await updateOwnPassword(password)
+        setPassword('')
+        await refreshAuth()
+        pushToast('Password baru berhasil disimpan.')
+        navigate(hasClaimedUsername ? '/dashboard' : '/onboarding', { replace: true })
       } else if (mode === 'forgot') {
         await requestPasswordReset(email)
         setResetSent(true)
-        pushToast('Instruksi pengaturan ulang kata sandi telah dikirim.')
+        pushToast('Tautan pemulihan password telah dikirim.')
       } else if (mode === 'register') {
         const res = await signUpWithEmail(email, password)
+        setPassword('')
         await refreshAuth()
         if (res.needsEmailVerification) {
           setVerifyNotice(true)
         } else {
-          pushToast('Akun berhasil dibuat. Mari lengkapi profil kamu.')
+          pushToast('Akun berhasil dibuat. Pilih username kamu.')
           navigate('/onboarding', { replace: true })
         }
       } else {
         await signInWithEmail(email, password)
+        setPassword('')
         await refreshAuth()
         pushToast('Berhasil masuk.')
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Terjadi kesalahan autentikasi.')
+      setError(err instanceof Error ? err.message : 'Terjadi kendala autentikasi.')
     } finally {
       setBusy(false)
     }
@@ -99,14 +108,25 @@ export function AuthPage({ mode }: { mode: 'login' | 'register' | 'forgot' }) {
 
   const handleGoogle = async () => {
     setError('')
+    setGoogleBusy(true)
     try {
+      if (!isSupabaseConfigured && isSandboxEnabled()) {
+        const targetEmail = email.trim() || 'kreator.google@luven.my.id'
+        await signInWithGoogleOAuth(targetEmail)
+        await refreshAuth()
+        pushToast('Masuk dengan Google berhasil.')
+        return
+      }
       await signInWithGoogleOAuth()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Gagal memulai login Google.')
+    } finally {
+      setGoogleBusy(false)
     }
   }
 
   const showAuthIllus = hasIllustration('auth-main')
+  const showGoogleBtn = mode !== 'forgot' && !isUpdatePassword && (isSupabaseConfigured || isSandboxEnabled())
 
   return (
     <SiteLayout>
@@ -114,7 +134,7 @@ export function AuthPage({ mode }: { mode: 'login' | 'register' | 'forgot' }) {
       {!backendReady ? (
         <SupabaseSetupPanel />
       ) : (
-        <div className="mx-auto max-w-[1200px] px-4 py-16 md:px-6 lg:px-8 lg:py-24">
+        <div className="mx-auto max-w-[1200px] px-4 py-12 md:px-6 lg:px-8 lg:py-20">
           <div
             className={
               showAuthIllus
@@ -129,189 +149,225 @@ export function AuthPage({ mode }: { mode: 'login' | 'register' | 'forgot' }) {
                   : 'w-full'
               }
             >
-              <Card className="p-6">
-                <div className="mb-4 flex items-center justify-between">
-                  <Logo variant="horizontal" size={104} className="text-fg" />
-                  <span className="font-mono text-[11px] uppercase tracking-wider text-fg-sec">
+              {authLoading && !isUpdatePassword ? (
+                <Card className="space-y-4 p-6">
+                  <Skeleton className="h-6 w-32" />
+                  <Skeleton className="h-8 w-3/4" />
+                  <Skeleton className="h-12 w-full" />
+                  <Skeleton className="h-11 w-full" />
+                  <Skeleton className="h-11 w-full" />
+                  <Skeleton className="h-12 w-full" />
+                </Card>
+              ) : (
+                <Card className="p-6">
+                  <div className="mb-4 flex items-center justify-between gap-2">
+                    <Logo variant="horizontal" size={104} className="text-fg" />
+                    <span className="font-mono text-[11px] uppercase tracking-wider text-fg-sec">
+                      {isUpdatePassword
+                        ? 'Password Baru'
+                        : mode === 'register'
+                          ? 'Daftar Akun'
+                          : mode === 'forgot'
+                            ? 'Pemulihan'
+                            : 'Masuk Akun'}
+                    </span>
+                  </div>
+
+                  <h1 className="m-0 text-[clamp(1.375rem,2.4vw,1.625rem)] font-extrabold leading-[1.15] tracking-[-0.03em] text-fg">
                     {isUpdatePassword
-                      ? 'Sandi Baru'
+                      ? 'Simpan password baru'
                       : mode === 'register'
-                        ? 'Pendaftaran'
+                        ? 'Buat akun kreator Luven'
                         : mode === 'forgot'
-                          ? 'Pemulihan'
-                          : 'Akses Kreator'}
-                  </span>
-                </div>
-                <h1 className="m-0 text-[24px] font-extrabold leading-[1.1] tracking-[-0.03em] text-fg">
-                  {isUpdatePassword
-                    ? 'Buat kata sandi baru'
-                    : mode === 'register'
-                      ? 'Buat halaman Luven kamu'
-                      : mode === 'forgot'
-                        ? 'Lupa kata sandi?'
-                        : 'Masuk ke dasbor Luven'}
-                </h1>
-                <p className="mt-2 text-[14px] leading-relaxed text-fg-sec">
-                  {isUpdatePassword
-                    ? 'Masukkan kata sandi baru minimal 8 karakter untuk akun kamu.'
-                    : mode === 'register'
-                      ? 'Siapkan halaman link-in-bio untuk akun TikTok dan template CapCut kamu.'
-                      : mode === 'forgot'
-                        ? 'Masukkan email terdaftar untuk menerima tautan pemulihan kata sandi.'
-                        : 'Kelola link bio, Studio Tampilan, template CapCut, dan analitik klik.'}
-                </p>
+                          ? 'Atur ulang password'
+                          : 'Masuk ke akun Luven'}
+                  </h1>
+                  <p className="mt-2 text-[14px] leading-relaxed text-fg-sec">
+                    {isUpdatePassword
+                      ? 'Masukkan password baru minimal 8 karakter untuk mengamankan akun kamu.'
+                      : mode === 'register'
+                        ? 'Daftar sekali untuk mengklaim alamat luven.my.id/@username kamu.'
+                        : mode === 'forgot'
+                          ? 'Masukkan email terdaftar untuk menerima tautan pengaturan ulang password.'
+                          : 'Masuk untuk membuka dasbor link bio, template CapCut, dan analitik.'}
+                  </p>
 
-                {verifyNotice ? (
-                  <div className="mt-6 rounded-xl border border-edge bg-elevated p-4">
-                    <h2 className="m-0 text-[16px] font-bold text-fg">Periksa kotak masuk email kamu</h2>
-                    <p className="mt-2 text-[14px] leading-relaxed text-fg-sec">
-                      Kami telah mengirimkan tautan verifikasi ke <strong className="text-fg">{email}</strong>.
-                      Klik tautan tersebut untuk mengaktifkan akun dan memilih username.
-                    </p>
-                    <div className="mt-4">
-                      <LinkButton to="/login" variant="secondary" fullWidth>
-                        Kembali ke halaman Masuk
-                      </LinkButton>
+                  {verifyNotice ? (
+                    <div className="mt-6 rounded-xl border border-edge bg-elevated p-4">
+                      <h2 className="m-0 text-[16px] font-bold text-fg">Periksa kotak masuk email</h2>
+                      <p className="mt-2 text-[14px] leading-relaxed text-fg-sec">
+                        Tautan aktivasi telah dikirim ke <strong className="text-fg">{email}</strong>.
+                        Buka tautan tersebut untuk melanjutkan klaim username.
+                      </p>
+                      <div className="mt-4">
+                        <LinkButton to="/login" variant="secondary" fullWidth>
+                          Kembali ke halaman Masuk
+                        </LinkButton>
+                      </div>
                     </div>
-                  </div>
-                ) : resetSent ? (
-                  <div className="mt-6 rounded-xl border border-edge bg-elevated p-4">
-                    <p className="m-0 text-[14px] leading-relaxed text-fg">
-                      Jika alamat <strong className="font-mono">{email}</strong> terdaftar, tautan atur ulang kata sandi telah dikirimkan.
-                    </p>
-                    <div className="mt-4">
-                      <LinkButton to="/login" variant="secondary" fullWidth>
-                        Kembali ke Masuk
-                      </LinkButton>
+                  ) : resetSent ? (
+                    <div className="mt-6 rounded-xl border border-edge bg-elevated p-4">
+                      <p className="m-0 text-[14px] leading-relaxed text-fg">
+                        Jika alamat <strong className="font-mono">{email}</strong> terdaftar, tautan pemulihan password telah dikirimkan.
+                      </p>
+                      <div className="mt-4">
+                        <LinkButton to="/login" variant="secondary" fullWidth>
+                          Kembali ke halaman Masuk
+                        </LinkButton>
+                      </div>
                     </div>
-                  </div>
-                ) : (
-                  <form onSubmit={handleSubmit} noValidate className="mt-6 space-y-4">
-                    <input
-                      type="text"
-                      name="company_website_hp"
-                      tabIndex={-1}
-                      autoComplete="off"
-                      className="hidden"
-                      aria-hidden="true"
-                    />
+                  ) : (
+                    <div className="mt-6 space-y-4">
+                      {showGoogleBtn && (
+                        <>
+                          <Button
+                            variant="secondary"
+                            size="lg"
+                            fullWidth
+                            loading={googleBusy}
+                            onClick={handleGoogle}
+                          >
+                            <GoogleGlyph size={16} />
+                            <span>Masuk dengan Google</span>
+                          </Button>
+                          <div className="relative flex items-center py-1">
+                            <div className="flex-1 border-t border-edge" />
+                            <span className="px-3 font-mono text-[11px] uppercase text-fg-sec">
+                              atau dengan email
+                            </span>
+                            <div className="flex-1 border-t border-edge" />
+                          </div>
+                        </>
+                      )}
 
-                    {!isUpdatePassword && (
-                      <Input
-                        type="email"
-                        label="Alamat Email"
-                        placeholder="nama@email.com"
-                        autoComplete="email"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        leftAddon={<Mail size={16} />}
-                        required
-                      />
-                    )}
-
-                    {(mode !== 'forgot' || isUpdatePassword) && (
-                      <div>
-                        <Input
-                          type="password"
-                          label={isUpdatePassword ? 'Kata Sandi Baru' : 'Kata Sandi'}
-                          placeholder={
-                            mode === 'register' || isUpdatePassword
-                              ? 'Minimal 8 karakter'
-                              : 'Kata sandi kamu'
-                          }
-                          autoComplete={
-                            mode === 'register' || isUpdatePassword
-                              ? 'new-password'
-                              : 'current-password'
-                          }
-                          value={password}
-                          onChange={(e) => setPassword(e.target.value)}
-                          leftAddon={<Lock size={16} />}
-                          required
+                      <form onSubmit={handleSubmit} noValidate className="space-y-4">
+                        <input
+                          type="text"
+                          name="company_website_hp"
+                          tabIndex={-1}
+                          autoComplete="off"
+                          className="hidden"
+                          aria-hidden="true"
                         />
-                        {mode === 'login' && !isUpdatePassword && (
-                          <div className="mt-1 text-right">
-                            <Link
-                              to="/forgot-password"
-                              className="inline-flex min-h-11 items-center px-1 text-[13px] text-fg-sec underline underline-offset-2 [@media(hover:hover)]:hover:text-fg"
-                            >
-                              Lupa kata sandi?
-                            </Link>
+
+                        {!isUpdatePassword && (
+                          <Input
+                            type="email"
+                            name="email"
+                            label="Alamat Email"
+                            placeholder="nama@email.com"
+                            autoComplete="email"
+                            value={email}
+                            onChange={(e) => {
+                              setEmail(e.target.value)
+                              setError('')
+                            }}
+                            leftAddon={<Mail size={16} />}
+                            required
+                          />
+                        )}
+
+                        {(mode !== 'forgot' || isUpdatePassword) && (
+                          <div>
+                            <PasswordInput
+                              name="password"
+                              label={isUpdatePassword ? 'Password Baru' : 'Password'}
+                              placeholder={
+                                mode === 'register' || isUpdatePassword
+                                  ? 'Minimal 8 karakter'
+                                  : 'Masukkan password'
+                              }
+                              autoComplete={
+                                mode === 'register' || isUpdatePassword
+                                  ? 'new-password'
+                                  : 'current-password'
+                              }
+                              value={password}
+                              onChange={(e) => {
+                                setPassword(e.target.value)
+                                setError('')
+                              }}
+                              leftAddon={<Lock size={16} />}
+                              required
+                            />
+
+                            {(mode === 'register' || isUpdatePassword) && (
+                              <PasswordStrengthMeter password={password} minLength={8} />
+                            )}
+
+                            {mode === 'login' && !isUpdatePassword && (
+                              <div className="mt-1 flex justify-end">
+                                <Link
+                                  to="/forgot-password"
+                                  className="inline-flex min-h-11 items-center px-1 text-[13px] text-fg-sec underline underline-offset-4 [@media(hover:hover)]:hover:text-fg"
+                                >
+                                  Lupa password?
+                                </Link>
+                              </div>
+                            )}
                           </div>
                         )}
-                      </div>
-                    )}
 
-                    {error && (
-                      <p
-                        role="alert"
-                        className="rounded-xl border border-fg border-l-4 border-l-fg bg-bg px-4 py-2.5 text-[13px] font-medium text-fg"
-                      >
-                        {error}
-                      </p>
-                    )}
+                        {error && (
+                          <p
+                            role="alert"
+                            className="rounded-xl border border-fg border-l-4 border-l-fg bg-bg px-4 py-2.5 text-[13px] font-medium leading-relaxed text-fg"
+                          >
+                            {error}
+                          </p>
+                        )}
 
-                    <Button type="submit" variant="primary" size="lg" fullWidth loading={busy}>
-                      {isUpdatePassword ? (
+                        <Button type="submit" variant="primary" size="lg" fullWidth loading={busy}>
+                          {isUpdatePassword ? (
+                            <>
+                              <KeyRound size={16} />
+                              <span>Simpan password</span>
+                            </>
+                          ) : mode === 'register' ? (
+                            <>
+                              <UserPlus size={16} />
+                              <span>Daftar dengan email</span>
+                            </>
+                          ) : mode === 'forgot' ? (
+                            <>
+                              <KeyRound size={16} />
+                              <span>Kirim link reset password</span>
+                            </>
+                          ) : (
+                            <span>Masuk ke dasbor</span>
+                          )}
+                        </Button>
+                      </form>
+                    </div>
+                  )}
+
+                  {!isUpdatePassword && (
+                    <div className="mt-6 border-t border-edge pt-4 text-center text-[13px] text-fg-sec">
+                      {mode === 'register' ? (
                         <>
-                          <KeyRound size={16} />
-                          <span>Simpan Kata Sandi Baru</span>
-                        </>
-                      ) : mode === 'register' ? (
-                        <>
-                          <UserPlus size={16} />
-                          <span>Daftar & Pilih Username</span>
-                        </>
-                      ) : mode === 'forgot' ? (
-                        <>
-                          <KeyRound size={16} />
-                          <span>Kirim Tautan Pemulihan</span>
+                          Sudah punya akun?{' '}
+                          <Link
+                            to="/login"
+                            className="inline-flex min-h-11 items-center px-1 font-semibold text-fg underline underline-offset-4"
+                          >
+                            Masuk di sini
+                          </Link>
                         </>
                       ) : (
-                        <span>Masuk</span>
+                        <>
+                          Belum punya akun?{' '}
+                          <Link
+                            to="/register"
+                            className="inline-flex min-h-11 items-center px-1 font-semibold text-fg underline underline-offset-4"
+                          >
+                            Daftar gratis
+                          </Link>
+                        </>
                       )}
-                    </Button>
-
-                    {mode !== 'forgot' && !isUpdatePassword && isSupabaseConfigured && (
-                      <>
-                        <div className="relative flex items-center py-1">
-                          <div className="flex-1 border-t border-edge" />
-                          <span className="px-3 font-mono text-[11px] uppercase text-fg-sec">atau</span>
-                          <div className="flex-1 border-t border-edge" />
-                        </div>
-                        <Button variant="secondary" size="lg" fullWidth onClick={handleGoogle}>
-                          <GoogleGlyph size={16} />
-                          <span>Masuk dengan Google</span>
-                        </Button>
-                      </>
-                    )}
-                  </form>
-                )}
-
-                <div className="mt-6 border-t border-edge pt-4 text-center text-[13px] text-fg-sec">
-                  {mode === 'register' ? (
-                    <>
-                      Sudah punya akun?{' '}
-                      <Link
-                        to="/login"
-                        className="font-semibold text-fg underline underline-offset-4"
-                      >
-                        Masuk di sini
-                      </Link>
-                    </>
-                  ) : (
-                    <>
-                      Belum punya halaman kreator?{' '}
-                      <Link
-                        to="/register"
-                        className="font-semibold text-fg underline underline-offset-4"
-                      >
-                        Daftar gratis
-                      </Link>
-                    </>
+                    </div>
                   )}
-                </div>
-              </Card>
+                </Card>
+              )}
             </div>
 
             {showAuthIllus && (

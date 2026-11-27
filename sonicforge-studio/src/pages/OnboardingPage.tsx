@@ -1,69 +1,82 @@
-import { useEffect, useState } from 'react'
+import { FormEvent, useEffect, useState } from 'react'
 import { Navigate, useNavigate } from 'react-router-dom'
-import { ArrowLeft, ArrowRight, AtSign, CheckCircle2, Loader2 } from 'lucide-react'
+import { AlertCircle, ArrowLeft, ArrowRight, AtSign, CheckCircle2, Loader2, Lock } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
-import { checkUsernameAvailability, clearPendingReferral, getPendingReferral, saveOwnProfile } from '../lib/platformStore'
+import {
+  checkUsernameAvailability,
+  claimUsername,
+  clearPendingReferral,
+  getPendingReferral,
+} from '../lib/platformStore'
 import { useDocumentMeta } from '../lib/seo'
+import { UsernameCheckStatus } from '../lib/types'
 import { CREATOR_CATEGORIES, normalizeUsername, validateAllowedUrl } from '../lib/validators'
 import { TikTokGlyph } from '../ui/BrandIcons'
 import { hasIllustration, Illustration } from '../ui/Illustration'
-import { Button, Card, Input, Select, Textarea, useToast } from '../ui/primitives'
+import { Badge, Button, Card, Input, Select, Skeleton, Textarea, useToast } from '../ui/primitives'
 import { SiteLayout } from '../ui/SiteLayout'
 
+const STATUS_BADGE_LABELS: Record<UsernameCheckStatus, string> = {
+  available: 'Tersedia',
+  taken: 'Sudah dipakai',
+  invalid: 'Format salah',
+  reserved: 'Dicadangkan',
+}
+
 export function OnboardingPage() {
-  const { loading, user, profile, refreshAuth } = useAuth()
+  const { loading, user, hasClaimedUsername, refreshAuth } = useAuth()
   const navigate = useNavigate()
   const { pushToast } = useToast()
 
   const [step, setStep] = useState<1 | 2 | 3>(1)
-  const [username, setUsername] = useState(profile?.username || '')
-  const [uStatus, setUStatus] = useState<'idle' | 'checking' | 'ok' | 'err'>('idle')
+  const [username, setUsername] = useState('')
+  const [checking, setChecking] = useState(false)
+  const [checkState, setCheckState] = useState<UsernameCheckStatus | null>(null)
   const [uMessage, setUMessage] = useState('')
 
-  const [displayName, setDisplayName] = useState(profile?.display_name || '')
-  const [category, setCategory] = useState<string>(profile?.category || CREATOR_CATEGORIES[0])
-  const [bio, setBio] = useState(profile?.bio || '')
-  const [tiktokUrl, setTiktokUrl] = useState(profile?.tiktok_url || '')
+  const [displayName, setDisplayName] = useState('')
+  const [category, setCategory] = useState<string>(CREATOR_CATEGORIES[0])
+  const [bio, setBio] = useState('')
+  const [tiktokUrl, setTiktokUrl] = useState('')
 
   const [saving, setSaving] = useState(false)
   const [formErr, setFormErr] = useState('')
 
   useDocumentMeta({
-    title: 'Siapkan Profil Kreator — Luven',
-    description: 'Pilih username unik luven.my.id/@username dan hubungkan profil TikTok Anda.',
+    title: 'Klaim Username — Luven',
+    description: 'Klaim alamat permanen luven.my.id/@username untuk akun kreator kamu.',
     path: '/onboarding',
   })
 
   useEffect(() => {
-    if (!username.trim()) {
-      setUStatus('idle')
+    const trimmed = username.trim()
+    if (!trimmed) {
+      setChecking(false)
+      setCheckState(null)
       setUMessage('')
       return
     }
-    setUStatus('checking')
+    setChecking(true)
     const timer = window.setTimeout(async () => {
-      const res = await checkUsernameAvailability(username, user?.id)
-      if (res.available) {
-        setUStatus('ok')
-        setUMessage(`luven.my.id/@${res.normalized} tersedia!`)
-      } else {
-        setUStatus('err')
-        setUMessage(res.message || 'Username tidak tersedia.')
-      }
+      const res = await checkUsernameAvailability(trimmed, user?.id)
+      setChecking(false)
+      setCheckState(res.status)
+      setUMessage(res.message)
     }, 260)
-    return () => clearTimeout(timer)
+    return () => window.clearTimeout(timer)
   }, [username, user?.id])
 
   if (!loading && !user) {
     return <Navigate to="/login" replace />
   }
-  if (!loading && profile?.onboarding_completed) {
+  // Keputusan diambil murni dari database: jika sudah punya username, langsung ke /dashboard
+  if (!loading && hasClaimedUsername) {
     return <Navigate to="/dashboard" replace />
   }
 
   const nextFromStep1 = () => {
-    if (uStatus !== 'ok') {
-      setFormErr(uMessage || 'Pilih username yang valid dan tersedia terlebih dahulu.')
+    if (checking || checkState !== 'available') {
+      setFormErr(uMessage || 'Pilih username yang tersedia terlebih dahulu.')
       return
     }
     setFormErr('')
@@ -82,7 +95,7 @@ export function OnboardingPage() {
     setStep(3)
   }
 
-  const finishOnboarding = async (e: React.FormEvent) => {
+  const finishOnboarding = async (e: FormEvent) => {
     e.preventDefault()
     if (!user) return
     const tt = validateAllowedUrl(tiktokUrl, 'tiktok', false)
@@ -95,21 +108,24 @@ export function OnboardingPage() {
     setFormErr('')
     try {
       const refUsername = getPendingReferral()
-      await saveOwnProfile(user.id, {
+      await claimUsername({
         username,
         display_name: displayName,
         bio,
         category,
         tiktok_url: tiktokUrl,
         referred_by: refUsername,
-        onboarding_completed: true,
       })
       clearPendingReferral()
       await refreshAuth()
-      pushToast('Profil kreator siap digunakan!')
+      pushToast('Username berhasil diklaim.')
       navigate('/dashboard', { replace: true })
     } catch (err) {
-      setFormErr(err instanceof Error ? err.message : 'Gagal menyimpan profil.')
+      const msg = err instanceof Error ? err.message : 'Gagal mengklaim username.'
+      setFormErr(msg)
+      if (/sudah dipakai|dicadangkan|format/i.test(msg)) {
+        setStep(1)
+      }
     } finally {
       setSaving(false)
     }
@@ -119,7 +135,7 @@ export function OnboardingPage() {
 
   return (
     <SiteLayout hideFooter>
-      <div className="mx-auto max-w-[1200px] px-4 py-16 md:px-6 lg:px-8 lg:py-24">
+      <div className="mx-auto max-w-[1200px] px-4 py-12 md:px-6 lg:px-8 lg:py-20">
         <div
           className={
             showAuthIllus
@@ -134,187 +150,240 @@ export function OnboardingPage() {
                 : 'w-full'
             }
           >
-        {/* Step Progress Indicator */}
-        <div className="mb-6 flex items-center justify-between gap-2">
-          {[
-            { n: 1, label: 'Username' },
-            { n: 2, label: 'Identitas' },
-            { n: 3, label: 'Akun TikTok' },
-          ].map((s) => (
-            <div key={s.n} className="flex flex-1 flex-col gap-1.5">
-              <div
-                className={`h-1.5 rounded-full transition-colors ${
-                  step >= s.n ? 'bg-accent' : 'bg-edge'
-                }`}
-              />
-              <span
-                className={`font-mono text-[11px] ${
-                  step === s.n ? 'font-semibold text-accent' : 'text-fg-sec'
-                }`}
-              >
-                0{s.n}. {s.label}
-              </span>
-            </div>
-          ))}
-        </div>
+            {loading ? (
+              <Card className="space-y-4 p-6">
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-8 w-2/3" />
+                <Skeleton className="h-11 w-full" />
+                <Skeleton className="h-12 w-full" />
+              </Card>
+            ) : (
+              <>
+                {/* Step Progress Indicator */}
+                <div className="mb-6 grid grid-cols-3 gap-2">
+                  {[
+                    { n: 1, label: 'Username' },
+                    { n: 2, label: 'Profil' },
+                    { n: 3, label: 'TikTok' },
+                  ].map((s) => (
+                    <div key={s.n} className="flex flex-col gap-1.5">
+                      <div
+                        className={`h-1.5 rounded-full transition-colors ${
+                          step >= s.n ? 'bg-accent' : 'bg-edge'
+                        }`}
+                      />
+                      <span
+                        className={`font-mono text-[11px] ${
+                          step === s.n ? 'font-semibold text-fg' : 'text-fg-sec'
+                        }`}
+                      >
+                        0{s.n}. {s.label}
+                      </span>
+                    </div>
+                  ))}
+                </div>
 
-        <Card className="p-6 sm:p-8">
-          {step === 1 && (
-            <div className="space-y-5">
-              <div>
-                <h1 className="m-0 text-[22px] font-extrabold tracking-[-0.03em] text-fg">
-                  Klaim tautan profil kamu
-                </h1>
-                <p className="mt-1.5 text-[13.5px] text-fg-sec">
-                  Pilih alamat singkat yang mudah diketik pengikut TikTok Anda di bio.
-                </p>
-              </div>
+                <Card className="p-6">
+                  {step === 1 && (
+                    <div className="space-y-4">
+                      <div>
+                        <h1 className="m-0 text-[22px] font-extrabold tracking-[-0.03em] text-fg">
+                          Klaim username permanen
+                        </h1>
+                        <p className="mt-1.5 text-[13.5px] leading-relaxed text-fg-sec">
+                          Satu akun hanya dapat mengklaim satu username untuk alamat publik{' '}
+                          <span className="font-mono text-fg">luven.my.id/@username</span>.
+                        </p>
+                      </div>
 
-              <div>
-                <Input
-                  label="Username Publik"
-                  placeholder="namakreator"
-                  value={username}
-                  maxLength={24}
-                  onChange={(e) => {
-                    setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9._]/g, ''))
-                    setFormErr('')
-                  }}
-                  leftAddon={<AtSign size={16} />}
-                  hint="3–24 karakter: huruf kecil a–z, angka, titik (.), atau garis bawah (_)."
-                />
+                      <div>
+                        <Input
+                          label="Username Publik"
+                          placeholder="namakreator"
+                          value={username}
+                          maxLength={24}
+                          autoComplete="off"
+                          onChange={(e) => {
+                            setUsername(e.target.value.toLowerCase().replace(/\s+/g, ''))
+                            setFormErr('')
+                          }}
+                          leftAddon={<AtSign size={16} />}
+                          hint="3–24 karakter: huruf kecil a–z, angka 0–9, titik (.), atau garis bawah (_)."
+                        />
 
-                {uStatus !== 'idle' && (
-                  <div className="mt-2.5 flex items-center gap-2 font-mono text-[12.5px]">
-                    {uStatus === 'checking' && (
-                      <>
-                        <Loader2 size={14} className="animate-spin text-fg-sec" />
-                        <span className="text-fg-sec">Memeriksa ketersediaan…</span>
-                      </>
-                    )}
-                    {uStatus === 'ok' && (
-                      <>
-                        <CheckCircle2 size={14} className="text-fg" />
-                        <span className="font-medium text-fg">{uMessage}</span>
-                      </>
-                    )}
-                    {uStatus === 'err' && <span className="font-medium underline decoration-dashed underline-offset-4 text-fg">{uMessage}</span>}
-                  </div>
-                )}
-              </div>
+                        {(checking || checkState) && (
+                          <div
+                            aria-live="polite"
+                            className="mt-3 flex flex-wrap items-center gap-2 rounded-xl border border-edge bg-elevated px-3 py-2.5 text-[12.5px]"
+                          >
+                            {checking ? (
+                              <>
+                                <Loader2 size={14} className="shrink-0 animate-spin text-fg-sec" />
+                                <span className="font-mono text-fg-sec">Memeriksa ketersediaan...</span>
+                              </>
+                            ) : checkState ? (
+                              <>
+                                {checkState === 'available' ? (
+                                  <CheckCircle2 size={15} className="shrink-0 text-fg" />
+                                ) : (
+                                  <AlertCircle size={15} className="shrink-0 text-fg" />
+                                )}
+                                <Badge variant={checkState === 'available' ? 'ok' : 'warn'}>
+                                  {STATUS_BADGE_LABELS[checkState]}
+                                </Badge>
+                                <span className="min-w-0 flex-1 font-mono text-[12px] text-fg">
+                                  {uMessage}
+                                </span>
+                              </>
+                            ) : null}
+                          </div>
+                        )}
+                      </div>
 
-              {formErr && <p role="alert" className="rounded-lg border-2 border-fg px-3 py-2 text-[13px] font-medium text-fg">{formErr}</p>}
+                      <div className="flex items-start gap-2.5 rounded-xl border border-edge bg-bg p-3 text-[12.5px] text-fg-sec">
+                        <Lock size={14} className="mt-0.5 shrink-0 text-fg" />
+                        <span>
+                          Username diklaim satu kali dan tidak bisa diganti sendiri setelah disimpan.
+                        </span>
+                      </div>
 
-              <Button
-                variant="primary"
-                fullWidth
-                disabled={uStatus !== 'ok'}
-                onClick={nextFromStep1}
-              >
-                <span>Lanjut ke Identitas Profil</span>
-                <ArrowRight size={16} />
-              </Button>
-            </div>
-          )}
+                      {formErr && (
+                        <p
+                          role="alert"
+                          className="rounded-xl border-2 border-fg px-3.5 py-2.5 text-[13px] font-medium text-fg"
+                        >
+                          {formErr}
+                        </p>
+                      )}
 
-          {step === 2 && (
-            <div className="space-y-5">
-              <div>
-                <h1 className="m-0 text-[22px] font-extrabold tracking-[-0.03em] text-fg">
-                  Perkenalkan diri Anda
-                </h1>
-                <p className="mt-1.5 text-[13.5px] text-fg-sec">
-                  Informasi ini tampil di bagian atas halaman <span className="font-mono text-fg">luven.my.id/@{normalizeUsername(username)}</span>.
-                </p>
-              </div>
+                      <Button
+                        variant="primary"
+                        size="lg"
+                        fullWidth
+                        disabled={checking || checkState !== 'available'}
+                        onClick={nextFromStep1}
+                      >
+                        <span>Lanjut isi profil</span>
+                        <ArrowRight size={16} />
+                      </Button>
+                    </div>
+                  )}
 
-              <Input
-                label="Nama Tampilan"
-                placeholder="Nama panggung atau nama studio"
-                value={displayName}
-                maxLength={50}
-                rightMeta={`${displayName.length}/50`}
-                onChange={(e) => {
-                  setDisplayName(e.target.value)
-                  setFormErr('')
-                }}
-              />
+                  {step === 2 && (
+                    <div className="space-y-4">
+                      <div>
+                        <h1 className="m-0 text-[22px] font-extrabold tracking-[-0.03em] text-fg">
+                          Lengkapi identitas profil
+                        </h1>
+                        <p className="mt-1.5 text-[13.5px] text-fg-sec">
+                          Ditampilkan pada header halaman{' '}
+                          <span className="font-mono text-fg">luven.my.id/@{normalizeUsername(username)}</span>.
+                        </p>
+                      </div>
 
-              <Select
-                label="Kategori Utama Template"
-                value={category}
-                onChange={(e) => setCategory(e.target.value)}
-              >
-                {CREATOR_CATEGORIES.map((c) => (
-                  <option key={c} value={c}>
-                    {c}
-                  </option>
-                ))}
-              </Select>
+                      <Input
+                        label="Nama Tampilan"
+                        placeholder="Nama kreator atau studio"
+                        value={displayName}
+                        maxLength={50}
+                        rightMeta={`${displayName.length}/50`}
+                        onChange={(e) => {
+                          setDisplayName(e.target.value)
+                          setFormErr('')
+                        }}
+                      />
 
-              <Textarea
-                label="Bio Singkat (opsional)"
-                placeholder="Kreator template transisi beat-sync & preset warna harian."
-                value={bio}
-                maxLength={160}
-                rightMeta={`${bio.length}/160`}
-                onChange={(e) => setBio(e.target.value)}
-              />
+                      <Select
+                        label="Kategori Utama"
+                        value={category}
+                        onChange={(e) => setCategory(e.target.value)}
+                      >
+                        {CREATOR_CATEGORIES.map((c) => (
+                          <option key={c} value={c}>
+                            {c}
+                          </option>
+                        ))}
+                      </Select>
 
-              {formErr && <p role="alert" className="rounded-lg border-2 border-fg px-3 py-2 text-[13px] font-medium text-fg">{formErr}</p>}
+                      <Textarea
+                        label="Bio Singkat (opsional)"
+                        placeholder="Kreator template transisi beat-sync & preset warna harian."
+                        value={bio}
+                        maxLength={160}
+                        rightMeta={`${bio.length}/160`}
+                        onChange={(e) => setBio(e.target.value)}
+                      />
 
-              <div className="flex items-center gap-3">
-                <Button variant="secondary" onClick={() => setStep(1)}>
-                  <ArrowLeft size={16} />
-                  <span>Kembali</span>
-                </Button>
-                <Button variant="primary" fullWidth onClick={nextFromStep2}>
-                  <span>Lanjut</span>
-                  <ArrowRight size={16} />
-                </Button>
-              </div>
-            </div>
-          )}
+                      {formErr && (
+                        <p
+                          role="alert"
+                          className="rounded-xl border-2 border-fg px-3.5 py-2.5 text-[13px] font-medium text-fg"
+                        >
+                          {formErr}
+                        </p>
+                      )}
 
-          {step === 3 && (
-            <form onSubmit={finishOnboarding} className="space-y-5">
-              <div>
-                <h1 className="m-0 text-[22px] font-extrabold tracking-[-0.03em] text-fg">
-                  Tempel akun TikTok Anda
-                </h1>
-                <p className="mt-1.5 text-[13.5px] text-fg-sec">
-                  Pengunjung dapat langsung membuka profil TikTok Anda lewat tombol utama di halaman publik.
-                </p>
-              </div>
+                      <div className="flex flex-col-reverse gap-2 sm:flex-row">
+                        <Button variant="secondary" size="lg" onClick={() => setStep(1)}>
+                          <ArrowLeft size={16} />
+                          <span>Kembali</span>
+                        </Button>
+                        <Button variant="primary" size="lg" fullWidth onClick={nextFromStep2}>
+                          <span>Lanjut</span>
+                          <ArrowRight size={16} />
+                        </Button>
+                      </div>
+                    </div>
+                  )}
 
-              <Input
-                label="Tautan atau Username TikTok (opsional)"
-                placeholder="https://www.tiktok.com/@username atau @username"
-                value={tiktokUrl}
-                onChange={(e) => {
-                  setTiktokUrl(e.target.value)
-                  setFormErr('')
-                }}
-                leftAddon={<TikTokGlyph size={15} />}
-                hint="Anda juga bisa menambahkan tautan sosial dan template CapCut lainnya di Dasbor setelah ini."
-              />
+                  {step === 3 && (
+                    <form onSubmit={finishOnboarding} className="space-y-4">
+                      <div>
+                        <h1 className="m-0 text-[22px] font-extrabold tracking-[-0.03em] text-fg">
+                          Hubungkan akun TikTok
+                        </h1>
+                        <p className="mt-1.5 text-[13.5px] text-fg-sec">
+                          Opsional. Kamu dapat menambah tautan lain dan template CapCut di Dasbor kapan saja.
+                        </p>
+                      </div>
 
-              {formErr && <p role="alert" className="rounded-lg border-2 border-fg px-3 py-2 text-[13px] font-medium text-fg">{formErr}</p>}
+                      <Input
+                        label="Tautan atau Username TikTok (opsional)"
+                        placeholder="https://www.tiktok.com/@username atau @username"
+                        value={tiktokUrl}
+                        onChange={(e) => {
+                          setTiktokUrl(e.target.value)
+                          setFormErr('')
+                        }}
+                        leftAddon={<TikTokGlyph size={15} />}
+                      />
 
-              <div className="flex items-center gap-3">
-                <Button variant="secondary" onClick={() => setStep(2)}>
-                  <ArrowLeft size={16} />
-                  <span>Kembali</span>
-                </Button>
-                <Button type="submit" variant="primary" fullWidth loading={saving}>
-                  <span>Buka Dasbor Kreator</span>
-                  <ArrowRight size={16} />
-                </Button>
-              </div>
-            </form>
-          )}
-        </Card>
+                      {formErr && (
+                        <p
+                          role="alert"
+                          className="rounded-xl border-2 border-fg px-3.5 py-2.5 text-[13px] font-medium text-fg"
+                        >
+                          {formErr}
+                        </p>
+                      )}
+
+                      <div className="flex flex-col-reverse gap-2 sm:flex-row">
+                        <Button variant="secondary" size="lg" onClick={() => setStep(2)}>
+                          <ArrowLeft size={16} />
+                          <span>Kembali</span>
+                        </Button>
+                        <Button type="submit" variant="primary" size="lg" fullWidth loading={saving}>
+                          <span>Klaim username</span>
+                          <ArrowRight size={16} />
+                        </Button>
+                      </div>
+                    </form>
+                  )}
+                </Card>
+              </>
+            )}
           </div>
+
           {showAuthIllus && (
             <div className="hidden lg:col-span-6 lg:block">
               <Illustration

@@ -15,7 +15,9 @@ export interface Profile {
   category: string
   is_verified: boolean
   is_featured: boolean
+  featured_order?: number
   is_banned: boolean
+  ban_reason?: string
   onboarding_completed: boolean
   plan: PlanId
   plan_expires_at: string | null
@@ -132,6 +134,8 @@ export interface SubscriptionRecord {
   started_at: string
   expires_at: string | null
   created_at: string
+  username?: string | null
+  email?: string
 }
 
 export interface AbuseReport {
@@ -141,14 +145,154 @@ export interface AbuseReport {
   target_id: string
   reason: string
   details: string
-  status: 'open' | 'resolved' | 'dismissed'
+  status: 'open' | 'reviewed' | 'resolved' | 'dismissed'
+  admin_note?: string
+  resolved_at?: string | null
   created_at: string
   target_label?: string
   target_url?: string
+  owner_username?: string | null
+  owner_id?: string | null
 }
+
+export type AuthProviderKind = 'google' | 'email'
 
 export interface AuthSessionUser {
   id: string
   email: string
   email_confirmed: boolean
+  providers: AuthProviderKind[]
+  has_password: boolean
+}
+
+export type UsernameCheckStatus = 'available' | 'taken' | 'invalid' | 'reserved'
+
+export interface UsernameCheckResult {
+  available: boolean
+  status: UsernameCheckStatus
+  normalized: string
+  message: string
+}
+
+export interface SiteSettings {
+  announcement_text: string
+  announcement_active: boolean
+  maintenance_mode: boolean
+  updated_at?: string
+}
+
+export interface AdminGateStatus {
+  is_admin: boolean
+  unlocked: boolean
+  session_open: boolean
+  must_change: boolean
+  unlocked_until: string | null
+  is_primary: boolean
+}
+
+export interface AdminAuditLogEntry {
+  id: string
+  actor_id?: string | null
+  actor_email: string
+  action: string
+  target_type: string
+  target_id: string
+  details: Record<string, unknown>
+  created_at: string
+}
+
+export interface AdminOverviewData {
+  metrics: {
+    total_users: number
+    new_users_7d: number
+    new_users_30d: number
+    active_profiles: number
+    total_templates: number
+    total_links: number
+    open_reports: number
+    active_pro: number
+    total_views: number
+    total_clicks: number
+  }
+  growth_30d: {
+    date: string
+    new_users: number
+    views: number
+    clicks: number
+  }[]
+  recent_logs: AdminAuditLogEntry[]
+}
+
+export interface AdminUserListItem {
+  id: string
+  email: string
+  registered_at: string
+  last_sign_in_at: string | null
+  providers: string[]
+  username: string | null
+  display_name: string | null
+  avatar_url: string | null
+  category: string | null
+  raw_plan: PlanId
+  plan_expires_at: string | null
+  effective_plan: PlanId
+  is_verified: boolean
+  is_featured: boolean
+  featured_order: number
+  is_banned: boolean
+  ban_reason: string
+  has_username: boolean
+  is_admin: boolean
+  is_primary_admin: boolean
+  templates_count: number
+  links_count: number
+}
+
+export interface AdminUserDetail {
+  account: {
+    id: string
+    email: string
+    email_confirmed_at: string | null
+    created_at: string
+    last_sign_in_at: string | null
+    has_password: boolean
+    providers: string[]
+    is_admin: boolean
+    is_primary_admin: boolean
+  }
+  profile: Profile | null
+  subscriptions: SubscriptionRecord[]
+  reports: AbuseReport[]
+  stats: {
+    templates_count: number
+    links_count: number
+    total_views: number
+    total_clicks: number
+  }
+}
+
+export interface AdminContentItem {
+  id: string
+  kind: 'template' | 'link'
+  link_type?: LinkItemType
+  title: string
+  description?: string
+  url: string | null
+  tiktok_url?: string | null
+  thumbnail_url: string | null
+  status: 'active' | 'hidden' | 'removed'
+  owner_id: string
+  owner_username: string
+  owner_display_name: string
+  created_at: string
+}
+
+export interface AdminTeamMember {
+  user_id: string
+  email: string
+  username: string | null
+  note: string | null
+  is_primary: boolean
+  has_passphrase: boolean
+  created_at: string
 }

@@ -26,15 +26,52 @@ export const POPULAR_TEMPLATE_TAGS = [
 
 export const RESERVED_USERNAMES = new Set([
   'admin', 'administrator', 'root', 'moderator', 'mod', 'support', 'help',
-  'studio', 'template', 'templates', 'explore', 'discover', 'search', 'pricing',
-  'login', 'signin', 'signup', 'register', 'logout', 'auth', 'onboarding',
-  'dashboard', 'settings', 'account', 'profile', 'profiles', 'user', 'users',
+  'studio', 'soundlab', 'template', 'templates', 'explore', 'discover', 'search', 'pricing',
+  'pro', 'free', 'login', 'signin', 'signup', 'register', 'logout', 'auth', 'forgot-password',
+  'onboarding', 'dashboard', 'settings', 'account', 'profile', 'profiles', 'user', 'users',
   'privacy', 'terms', 'tos', 'dmca', 'contact', 'about', 'faq', 'legal',
-  'api', 'assets', 'ffmpeg', 'public', 'static', 'sitemap', 'sitemap.xml',
-  'robots', 'robots.txt', 'favicon', 'favicon.svg', 'luven', 'luventemplate',
-  'official', 'verified', 'tiktok', 'capcut', 'instagram', 'youtube', 'google',
-  'null', 'undefined', 'system', 'me', 'new', 'edit',
+  'api', 'assets', 'images', 'brand', 'ffmpeg', 'public', 'static', 'sitemap', 'sitemap.xml',
+  'robots', 'robots.txt', 'favicon', 'favicon.svg', 'luven', 'luventemplate', 'luvenindonesia',
+  'luvenofficial', 'official', 'verified', 'tiktok', 'capcut', 'instagram', 'youtube', 'whatsapp',
+  'google', 'null', 'undefined', 'system', 'me', 'new', 'edit',
 ])
+
+export function validateUsernameDetailed(raw: string): {
+  ok: boolean
+  status: 'available' | 'invalid' | 'reserved'
+  normalized: string
+  error?: string
+} {
+  const u = normalizeUsername(raw)
+  if (!u) {
+    return { ok: false, status: 'invalid', normalized: u, error: 'Username wajib diisi.' }
+  }
+  if (u.length < 3 || u.length > 24) {
+    return {
+      ok: false,
+      status: 'invalid',
+      normalized: u,
+      error: 'Format salah: panjang username harus 3–24 karakter.',
+    }
+  }
+  if (!/^[a-z0-9](?:[a-z0-9._]*[a-z0-9])?$/.test(u) || u.includes('..')) {
+    return {
+      ok: false,
+      status: 'invalid',
+      normalized: u,
+      error: 'Format salah: gunakan huruf kecil a–z, angka 0–9, titik (.), atau garis bawah (_).',
+    }
+  }
+  if (RESERVED_USERNAMES.has(u) || IMPERSONATION_PATTERNS.some((re) => re.test(u))) {
+    return {
+      ok: false,
+      status: 'reserved',
+      normalized: u,
+      error: `Username @${u} dicadangkan oleh sistem.`,
+    }
+  }
+  return { ok: true, status: 'available', normalized: u }
+}
 
 const IMPERSONATION_PATTERNS = [
   /^tiktok(?:official|id|shop)?$/,

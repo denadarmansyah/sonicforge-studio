@@ -16,7 +16,7 @@ import {
 } from 'react'
 import { Link, LinkProps } from 'react-router-dom'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
-import { AlertCircle, CheckCircle2, ChevronDown, Info, Loader2, X } from 'lucide-react'
+import { AlertCircle, CheckCircle2, ChevronDown, Eye, EyeOff, Info, Loader2, X } from 'lucide-react'
 
 export const EASE_SMOOTH: [number, number, number, number] = [0.22, 1, 0.36, 1]
 
@@ -316,6 +316,132 @@ export const Input = forwardRef<
     </FieldShell>
   )
 })
+
+export const PasswordInput = forwardRef<
+  HTMLInputElement,
+  Omit<InputHTMLAttributes<HTMLInputElement>, 'type'> & {
+    label?: string
+    hint?: string
+    error?: string
+    rightMeta?: string
+    leftAddon?: ReactNode
+    autoComplete?: 'current-password' | 'new-password'
+  }
+>(function PasswordInput(
+  {
+    label,
+    hint,
+    error,
+    rightMeta,
+    leftAddon,
+    autoComplete = 'current-password',
+    className = '',
+    id,
+    value,
+    ...rest
+  },
+  ref
+) {
+  const autoId = useId()
+  const fieldId = id || autoId
+  const [visible, setVisible] = useState(false)
+
+  useEffect(() => {
+    if (value === '') {
+      setVisible(false)
+    }
+  }, [value])
+
+  const toggleLabel = visible ? 'Sembunyikan password' : 'Tampilkan password'
+
+  return (
+    <FieldShell label={label} hint={hint} error={error} rightMeta={rightMeta} id={fieldId}>
+      <div className="relative flex items-center">
+        {leftAddon && (
+          <span className="pointer-events-none absolute left-3.5 flex items-center text-fg-sec">
+            {leftAddon}
+          </span>
+        )}
+        <input
+          ref={ref}
+          id={fieldId}
+          type={visible ? 'text' : 'password'}
+          autoComplete={autoComplete}
+          value={value}
+          aria-invalid={Boolean(error)}
+          className={`min-h-11 w-full rounded-xl border bg-bg pl-3.5 pr-12 text-[14px] text-fg placeholder-fg-muted outline-none transition-colors duration-150 focus-visible:border-accent disabled:opacity-50 ${
+            leftAddon ? 'pl-10' : ''
+          } ${error ? 'border-err' : 'border-edge'} ${className}`}
+          {...rest}
+        />
+        <button
+          type="button"
+          aria-label={toggleLabel}
+          aria-pressed={visible}
+          title={toggleLabel}
+          onClick={() => setVisible((prev) => !prev)}
+          className="absolute right-0.5 inline-flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-xl text-fg-sec transition-colors [@media(hover:hover)]:hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-accent"
+        >
+          {visible ? <EyeOff size={17} aria-hidden="true" /> : <Eye size={17} aria-hidden="true" />}
+        </button>
+      </div>
+    </FieldShell>
+  )
+})
+
+export function evaluatePasswordStrength(password: string, minLength = 8): {
+  score: 0 | 1 | 2 | 3 | 4
+  label: string
+  meetsMin: boolean
+} {
+  if (!password) {
+    return { score: 0, label: `Minimal ${minLength} karakter`, meetsMin: false }
+  }
+  if (password.length < minLength) {
+    return {
+      score: 1,
+      label: `Terlalu pendek (${password.length}/${minLength} karakter)`,
+      meetsMin: false,
+    }
+  }
+  let points = 1
+  if (password.length >= minLength + 4) points += 1
+  if (/[a-z]/.test(password) && /[A-Z]/.test(password)) points += 1
+  if (/\d/.test(password) && /[^A-Za-z0-9]/.test(password)) points += 1
+  else if (/\d/.test(password) || /[^A-Za-z0-9]/.test(password)) points += 0.5
+
+  const score = Math.min(4, Math.max(2, Math.floor(points))) as 2 | 3 | 4
+  const label = score === 4 ? 'Sangat kuat' : score === 3 ? 'Kuat' : 'Cukup'
+  return { score, label, meetsMin: true }
+}
+
+export function PasswordStrengthMeter({
+  password,
+  minLength = 8,
+}: {
+  password: string
+  minLength?: number
+}) {
+  const { score, label } = evaluatePasswordStrength(password, minLength)
+  return (
+    <div className="mt-2 space-y-1.5" aria-live="polite">
+      <div className="grid grid-cols-4 gap-1.5" aria-hidden="true">
+        {[1, 2, 3, 4].map((step) => (
+          <span
+            key={step}
+            className={`h-1.5 rounded-full transition-colors duration-150 ${
+              score >= step ? 'bg-fg' : 'bg-edge'
+            }`}
+          />
+        ))}
+      </div>
+      <div className="flex items-center justify-between text-[12px]">
+        <span className="text-fg-sec">Kekuatan password</span>
+        <span className="font-mono font-medium text-fg">{label}</span>
+      </div>
+    </div>
+  )
+}
 
 export const Textarea = forwardRef<
   HTMLTextAreaElement,

@@ -23,6 +23,9 @@ const OnboardingPage = lazy(() =>
 const DashboardPage = lazy(() =>
   import('./pages/DashboardPage').then((m) => ({ default: m.DashboardPage }))
 )
+const AccountSettingsPage = lazy(() =>
+  import('./pages/AccountSettingsPage').then((m) => ({ default: m.AccountSettingsPage }))
+)
 const AdminPage = lazy(() =>
   import('./pages/AdminPage').then((m) => ({ default: m.AdminPage }))
 )
@@ -80,6 +83,7 @@ export default function App() {
               <Route path="/forgot-password" element={<AuthPage mode="forgot" />} />
               <Route path="/onboarding" element={<OnboardingPage />} />
               <Route path="/dashboard" element={<DashboardPage />} />
+              <Route path="/dashboard/settings" element={<AccountSettingsPage />} />
               <Route path="/admin" element={<AdminPage />} />
               <Route path="/studio" element={<StudioPage />} />
               <Route path="/privacy" element={<PrivacyPage />} />

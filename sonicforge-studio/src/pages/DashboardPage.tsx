@@ -23,6 +23,7 @@ import {
   Palette,
   Plus,
   QrCode,
+  Settings,
   ShieldCheck,
   Sparkles,
   Trash2,
@@ -48,7 +49,7 @@ import {
   uploadCreatorImage,
 } from '../lib/platformStore'
 import { useDocumentMeta } from '../lib/seo'
-import { isSandboxEnabled, SITE_ORIGIN } from '../lib/supabaseClient'
+import { ADMIN_TIKTOK_HANDLE, isSandboxEnabled, SITE_ORIGIN } from '../lib/supabaseClient'
 import {
   DEFAULT_FREE_THEME,
   DEFAULT_PROFILE_SETTINGS,
@@ -119,7 +120,7 @@ function toDatetimeLocalValue(iso?: string | null): string {
 }
 
 export function DashboardPage() {
-  const { loading: authLoading, user, profile, isAdmin, refreshAuth } = useAuth()
+  const { loading: authLoading, user, profile, hasClaimedUsername, isAdmin, refreshAuth } = useAuth()
   const { pushToast } = useToast()
 
   const [activeTab, setActiveTab] = useState<DashTab>('links')
@@ -242,10 +243,10 @@ export function DashboardPage() {
   }, [user, profile?.username, pushToast])
 
   useEffect(() => {
-    if (user && profile?.onboarding_completed) {
+    if (user && hasClaimedUsername) {
       void loadDashboardData()
     }
-  }, [user, profile?.onboarding_completed, loadDashboardData])
+  }, [user, hasClaimedUsername, loadDashboardData])
 
   const expiryNotice = useMemo(() => {
     if (!profile?.plan_expires_at) return null
@@ -268,7 +269,7 @@ export function DashboardPage() {
   }, [profile?.plan, profile?.plan_expires_at, isPro])
 
   if (!authLoading && !user) return <Navigate to="/login" replace />
-  if (!authLoading && user && !profile?.onboarding_completed) {
+  if (!authLoading && user && !hasClaimedUsername) {
     return <Navigate to="/onboarding" replace />
   }
 
@@ -346,7 +347,6 @@ export function DashboardPage() {
     setSavingProfile(true)
     try {
       await saveOwnProfile(user.id, {
-        username,
         display_name: displayName,
         bio,
         category,
@@ -356,7 +356,6 @@ export function DashboardPage() {
         website_url: websiteUrl,
         avatar_url: avatarUrl,
         banner_url: bannerUrl,
-        onboarding_completed: true,
       })
       await refreshAuth()
       pushToast('Perubahan profil disimpan.')
@@ -703,6 +702,10 @@ export function DashboardPage() {
                   <span>Upgrade ke Pro</span>
                 </Button>
               )}
+              <LinkButton to="/dashboard/settings" variant="secondary" size="sm">
+                <Settings size={15} />
+                <span>Pengaturan Akun</span>
+              </LinkButton>
               <Button variant="secondary" size="sm" onClick={copyProfileUrl}>
                 {copied ? <Check size={15} /> : <Copy size={15} />}
                 <span>{copied ? 'Tersalin' : 'Salin Link'}</span>
@@ -719,8 +722,8 @@ export function DashboardPage() {
           </div>
         )}
 
-        {/* Navigation Tabs (Scrollable on Mobile, Full Bar on Desktop) */}
-        <div className="mt-6">
+        {/* Mobile/Tablet Horizontal Section Bar (<1024px) + Desktop Sidebar Layout */}
+        <div className="mt-6 lg:hidden">
           <Tabs<DashTab>
             layoutGroupId="dash-main-tabs"
             active={activeTab}
@@ -736,8 +739,58 @@ export function DashboardPage() {
           />
         </div>
 
-        {/* WORKSPACE CONTENT */}
-        <div className="mt-6">
+        <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-[220px_minmax(0,1fr)] lg:items-start">
+          {/* Desktop Left Sidebar (>=1024px) */}
+          <aside aria-label="Menu bagian dasbor" className="hidden lg:sticky lg:top-24 lg:block">
+            <Card className="space-y-1 p-2">
+              {(
+                [
+                  { id: 'links', label: 'Link Bio', icon: Link2, count: activeNonHeadingCount },
+                  { id: 'appearance', label: 'Tampilan', icon: Palette },
+                  { id: 'templates', label: 'Template CapCut', icon: Layers, count: templates.length },
+                  { id: 'profile', label: 'Profil & Sosial', icon: UserCircle2 },
+                  { id: 'analytics', label: 'Analitik', icon: BarChart3 },
+                  { id: 'billing', label: 'Paket & Tagihan', icon: CreditCard },
+                ] as const
+              ).map((item) => {
+                const Icon = item.icon
+                const active = activeTab === item.id
+                return (
+                  <Button
+                    key={item.id}
+                    variant={active ? 'primary' : 'ghost'}
+                    size="md"
+                    fullWidth
+                    onClick={() => setActiveTab(item.id)}
+                    className="justify-between! px-3!"
+                  >
+                    <span className="inline-flex items-center gap-2.5">
+                      <Icon size={16} />
+                      <span>{item.label}</span>
+                    </span>
+                    {'count' in item && typeof item.count === 'number' && (
+                      <span className="font-mono text-[11px] opacity-80">{item.count}</span>
+                    )}
+                  </Button>
+                )
+              })}
+              <div className="my-1 border-t border-edge pt-1">
+                <LinkButton
+                  to="/dashboard/settings"
+                  variant="ghost"
+                  size="md"
+                  fullWidth
+                  className="justify-start! px-3!"
+                >
+                  <Settings size={16} />
+                  <span>Pengaturan Akun</span>
+                </LinkButton>
+              </div>
+            </Card>
+          </aside>
+
+          {/* WORKSPACE CONTENT */}
+          <div className="min-w-0">
           {/* TAB 1: KELOLA LINK-IN-BIO */}
           {activeTab === 'links' && (
             <div className="grid grid-cols-1 gap-8 lg:grid-cols-[1fr_400px]">
@@ -1166,9 +1219,10 @@ export function DashboardPage() {
                   <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <Input
                       label="Username (@)"
-                      value={username}
-                      maxLength={24}
-                      onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9._]/g, ''))}
+                      value={`@${username}`}
+                      hint={`Terkunci permanen. Hubungi TikTok ${ADMIN_TIKTOK_HANDLE} bila perlu bantuan.`}
+                      disabled
+                      readOnly
                     />
                     <Input
                       label="Nama Tampilan"
@@ -1535,48 +1589,81 @@ export function DashboardPage() {
                     Belum ada riwayat transaksi atau aktivasi paket Pro pada akun ini.
                   </p>
                 ) : (
-                  <div className="mt-4 overflow-x-auto">
-                    <table className="w-full min-w-[520px] border-collapse text-left text-[13px]">
-                      <thead>
-                        <tr className="border-b border-edge text-fg-sec">
-                          <th className="py-2.5 pr-4 font-semibold">Tanggal</th>
-                          <th className="py-2.5 pr-4 font-semibold">Paket</th>
-                          <th className="py-2.5 pr-4 font-semibold">Status</th>
-                          <th className="py-2.5 pr-4 font-semibold">Metode</th>
-                          <th className="py-2.5 font-semibold">Masa Berlaku</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-edge">
-                        {subscriptions.map((s) => (
-                          <tr key={s.id}>
-                            <td className="py-3 pr-4 font-mono text-fg-sec">
-                              {new Date(s.created_at).toLocaleDateString('id-ID')}
-                            </td>
-                            <td className="py-3 pr-4 font-semibold uppercase text-fg">{s.plan}</td>
-                            <td className="py-3 pr-4">
-                              <Badge
-                                variant={
-                                  s.status === 'active'
-                                    ? 'ok'
-                                    : s.status === 'pending'
-                                      ? 'warn'
-                                      : 'neutral'
-                                }
-                              >
-                                {s.status}
-                              </Badge>
-                            </td>
-                            <td className="py-3 pr-4 font-mono text-fg-sec">{s.provider}</td>
-                            <td className="py-3 font-mono text-fg-sec">
-                              {s.expires_at
-                                ? new Date(s.expires_at).toLocaleDateString('id-ID')
-                                : 'Selamanya'}
-                            </td>
+                  <>
+                    <div className="mt-4 space-y-3 sm:hidden">
+                      {subscriptions.map((s) => (
+                        <div key={s.id} className="space-y-1.5 rounded-xl border border-edge bg-bg p-3.5 text-[13px]">
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="font-semibold uppercase text-fg">{s.plan}</span>
+                            <Badge
+                              variant={
+                                s.status === 'active'
+                                  ? 'ok'
+                                  : s.status === 'pending'
+                                    ? 'warn'
+                                    : 'neutral'
+                              }
+                            >
+                              {s.status}
+                            </Badge>
+                          </div>
+                          <div className="flex items-center justify-between text-[12px] text-fg-sec">
+                            <span>Tanggal</span>
+                            <span className="font-mono">{new Date(s.created_at).toLocaleDateString('id-ID')}</span>
+                          </div>
+                          <div className="flex items-center justify-between text-[12px] text-fg-sec">
+                            <span>Masa berlaku</span>
+                            <span className="font-mono">
+                              {s.expires_at ? new Date(s.expires_at).toLocaleDateString('id-ID') : 'Selamanya'}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="mt-4 hidden overflow-x-auto sm:block">
+                      <table className="w-full border-collapse text-left text-[13px]">
+                        <thead>
+                          <tr className="border-b border-edge text-fg-sec">
+                            <th className="py-2.5 pr-4 font-semibold">Tanggal</th>
+                            <th className="py-2.5 pr-4 font-semibold">Paket</th>
+                            <th className="py-2.5 pr-4 font-semibold">Status</th>
+                            <th className="py-2.5 pr-4 font-semibold">Metode</th>
+                            <th className="py-2.5 font-semibold">Masa Berlaku</th>
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
+                        </thead>
+                        <tbody className="divide-y divide-edge">
+                          {subscriptions.map((s) => (
+                            <tr key={s.id}>
+                              <td className="py-3 pr-4 font-mono text-fg-sec">
+                                {new Date(s.created_at).toLocaleDateString('id-ID')}
+                              </td>
+                              <td className="py-3 pr-4 font-semibold uppercase text-fg">{s.plan}</td>
+                              <td className="py-3 pr-4">
+                                <Badge
+                                  variant={
+                                    s.status === 'active'
+                                      ? 'ok'
+                                      : s.status === 'pending'
+                                        ? 'warn'
+                                        : 'neutral'
+                                  }
+                                >
+                                  {s.status}
+                                </Badge>
+                              </td>
+                              <td className="py-3 pr-4 font-mono text-fg-sec">{s.provider}</td>
+                              <td className="py-3 font-mono text-fg-sec">
+                                {s.expires_at
+                                  ? new Date(s.expires_at).toLocaleDateString('id-ID')
+                                  : 'Selamanya'}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </>
                 )}
               </Card>
             </div>
@@ -1594,6 +1681,7 @@ export function DashboardPage() {
               />
             </div>
           )}
+          </div>
         </div>
       </div>
 

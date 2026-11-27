@@ -2,12 +2,15 @@ import { ReactNode, useEffect, useRef, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import {
+  AlertTriangle,
   AudioWaveform,
   Compass,
   ExternalLink,
   LayoutDashboard,
   LogOut,
+  Megaphone,
   Menu,
+  Settings,
   ShieldCheck,
   UserPlus,
   X,
@@ -40,7 +43,7 @@ export function SiteLayout({
   children: ReactNode
   hideFooter?: boolean
 }) {
-  const { user, profile, isAdmin, signOut } = useAuth()
+  const { user, profile, hasClaimedUsername, isAdmin, siteSettings, signOut } = useAuth()
   const location = useLocation()
   const navigate = useNavigate()
   const reduce = useReducedMotion()
@@ -198,11 +201,11 @@ export function SiteLayout({
                 {isAdmin && (
                   <LinkButton to="/admin" variant="ghost" size="sm">
                     <ShieldCheck size={15} className="text-accent" />
-                    <span>Moderasi</span>
+                    <span>Panel Admin</span>
                   </LinkButton>
                 )}
                 <LinkButton
-                  to={profile?.onboarding_completed ? '/dashboard' : '/onboarding'}
+                  to={hasClaimedUsername ? '/dashboard' : '/onboarding'}
                   variant="secondary"
                   size="sm"
                 >
@@ -238,8 +241,17 @@ export function SiteLayout({
                     {
                       label: 'Dasbor kreator',
                       icon: <LayoutDashboard size={15} />,
-                      onClick: () => navigate(profile?.onboarding_completed ? '/dashboard' : '/onboarding'),
+                      onClick: () => navigate(hasClaimedUsername ? '/dashboard' : '/onboarding'),
                     },
+                    ...(hasClaimedUsername
+                      ? [
+                          {
+                            label: 'Pengaturan akun',
+                            icon: <Settings size={15} />,
+                            onClick: () => navigate('/dashboard/settings'),
+                          },
+                        ]
+                      : []),
                     {
                       label: 'Keluar akun',
                       icon: <LogOut size={15} />,
@@ -336,12 +348,21 @@ export function SiteLayout({
                   {user && (
                     <>
                       <Link
-                        to={profile?.onboarding_completed ? '/dashboard' : '/onboarding'}
+                        to={hasClaimedUsername ? '/dashboard' : '/onboarding'}
                         className="flex min-h-12 items-center gap-3 rounded-xl border border-transparent px-4 text-[15px] font-medium text-fg no-underline"
                       >
                         <LayoutDashboard size={18} />
                         <span>Dasbor Kreator</span>
                       </Link>
+                      {hasClaimedUsername && (
+                        <Link
+                          to="/dashboard/settings"
+                          className="flex min-h-12 items-center gap-3 rounded-xl border border-transparent px-4 text-[15px] font-medium text-fg no-underline"
+                        >
+                          <Settings size={18} />
+                          <span>Pengaturan Akun</span>
+                        </Link>
+                      )}
                       {profile?.username && (
                         <Link
                           to={`/@${profile.username}`}
@@ -357,7 +378,7 @@ export function SiteLayout({
                           className="flex min-h-12 items-center gap-3 rounded-xl border border-transparent px-4 text-[15px] font-medium text-accent no-underline"
                         >
                           <ShieldCheck size={18} />
-                          <span>Moderasi Admin</span>
+                          <span>Panel Admin</span>
                         </Link>
                       )}
                     </>
@@ -408,6 +429,26 @@ export function SiteLayout({
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Pengumuman Situs & Mode Pemeliharaan */}
+      {siteSettings.announcement_active && siteSettings.announcement_text && (
+        <div className="border-b border-edge bg-elevated px-4 py-2.5 text-center text-[13px] text-fg">
+          <div className="mx-auto flex max-w-[1200px] items-center justify-center gap-2">
+            <Megaphone size={15} className="shrink-0 text-fg" />
+            <span>{siteSettings.announcement_text}</span>
+          </div>
+        </div>
+      )}
+      {siteSettings.maintenance_mode && (
+        <div className="border-b border-fg bg-bg px-4 py-2.5 text-center text-[13px] font-medium text-fg">
+          <div className="mx-auto flex max-w-[1200px] items-center justify-center gap-2">
+            <AlertTriangle size={15} className="shrink-0 text-fg" />
+            <span>
+              Luven sedang dalam pemeliharaan terjadwal. Beberapa perubahan sementara ditangguhkan.
+            </span>
+          </div>
+        </div>
+      )}
 
       {/* Main Content */}
       <main id="main-content" className="flex-1">
