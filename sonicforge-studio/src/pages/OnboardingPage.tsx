@@ -6,6 +6,7 @@ import { checkUsernameAvailability, clearPendingReferral, getPendingReferral, sa
 import { useDocumentMeta } from '../lib/seo'
 import { CREATOR_CATEGORIES, normalizeUsername, validateAllowedUrl } from '../lib/validators'
 import { TikTokGlyph } from '../ui/BrandIcons'
+import { hasIllustration, Illustration } from '../ui/Illustration'
 import { Button, Card, Input, Select, Textarea, useToast } from '../ui/primitives'
 import { SiteLayout } from '../ui/SiteLayout'
 
@@ -114,9 +115,25 @@ export function OnboardingPage() {
     }
   }
 
+  const showAuthIllus = hasIllustration('auth-main')
+
   return (
     <SiteLayout hideFooter>
-      <div className="mx-auto max-w-[540px] px-4 py-10 sm:py-14">
+      <div className="mx-auto max-w-[1200px] px-4 py-16 md:px-6 lg:px-8 lg:py-24">
+        <div
+          className={
+            showAuthIllus
+              ? 'grid grid-cols-4 items-center gap-8 md:grid-cols-8 lg:grid-cols-12 lg:gap-6'
+              : 'mx-auto max-w-[420px]'
+          }
+        >
+          <div
+            className={
+              showAuthIllus
+                ? 'col-span-4 mx-auto w-full max-w-[420px] md:col-span-8 lg:col-span-6'
+                : 'w-full'
+            }
+          >
         {/* Step Progress Indicator */}
         <div className="mb-6 flex items-center justify-between gap-2">
           {[
@@ -297,6 +314,17 @@ export function OnboardingPage() {
             </form>
           )}
         </Card>
+          </div>
+          {showAuthIllus && (
+            <div className="hidden lg:col-span-6 lg:block">
+              <Illustration
+                name="auth-main"
+                alt="Ilustrasi pintu studio terbuka dengan gelombang suara mengalir keluar"
+                sizes="540px"
+              />
+            </div>
+          )}
+        </div>
       </div>
     </SiteLayout>
   )

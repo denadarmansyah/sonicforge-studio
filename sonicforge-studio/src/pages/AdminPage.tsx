@@ -79,7 +79,7 @@ export function AdminPage() {
 
   return (
     <SiteLayout>
-      <div className="mx-auto max-w-[1280px] px-4 py-8 sm:py-10 md:px-6 lg:px-8">
+      <div className="mx-auto max-w-[1200px] px-4 py-12 md:px-6 lg:px-8">
         <div className="flex flex-col justify-between gap-4 border-b border-edge pb-6 md:flex-row md:items-end">
           <div>
             <span className="font-mono text-[11px] uppercase tracking-widest text-accent">

@@ -71,7 +71,7 @@ export function TemplateCard({
           src={template.thumbnail_url}
           alt={`Thumbnail template ${template.title}`}
           ratio="4:5"
-          fallbackLabel="TEMPLATE 4:5"
+          fallbackLabel="PRATINJAU"
           colorOnHover
         />
         {template.song_title && (

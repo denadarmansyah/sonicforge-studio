@@ -50,7 +50,7 @@ Salin `.env.example` menjadi `.env.local` di dalam folder `sonicforge-studio/` (
 
 ---
 
-## Menjalankan Secara Lokal
+## Menjalankan & Membangun Gambar Ilustrasi
 
 ```bash
 npm install
@@ -58,3 +58,11 @@ npm run dev
 npm run typecheck
 npm run build
 ```
+
+### Pipeline Gambar Ilustrasi 2D (`scripts/generate-images.mjs` & `scripts/build-images.mjs`)
+- Buku arah seni dan seluruh prompt siap pakai berada di [`docs/ART_DIRECTION.md`](./docs/ART_DIRECTION.md) serta [`docs/IMAGE_PROMPTS.md`](./docs/IMAGE_PROMPTS.md).
+- Untuk membuat sisa aset gambar master secara otomatis via API gambar ke `raw-assets/images/` (tidak di-commit) lalu mengoptimasinya ke `public/images/<nama>-800.png` & `-1600.png`:
+  1. Tambahkan baris `IMAGE_API_KEY=...` ke berkas `.env.local` (jangan di-commit).
+  2. Jalankan `node scripts/generate-images.mjs`.
+- Jika Anda membuat berkas master secara manual dari `docs/IMAGE_PROMPTS.md` dan menyimpannya ke `raw-assets/images/<nama>.png`, jalankan `npm run build:images` (`node scripts/build-images.mjs`) lalu daftarkan namanya ke `AVAILABLE_ILLUSTRATIONS` di `src/ui/Illustration.tsx`.
+

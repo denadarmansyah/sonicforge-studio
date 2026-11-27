@@ -578,11 +578,11 @@ export function ProgressiveImage({
       : { w: 800, h: 1000, aspect: 'aspect-[4/5]' }
 
   return (
-    <div className={`relative w-full overflow-hidden bg-elevated hw-grid-bg ${dims.aspect} ${className}`}>
+    <div className={`relative w-full overflow-hidden bg-elevated ${dims.aspect} ${className}`}>
       {(!src || failed) && (
         <div className="absolute inset-0 flex flex-col items-center justify-center p-4 text-center">
           <span className="rounded-md border border-edge bg-surface px-2.5 py-1 font-mono text-[11px] uppercase tracking-wider text-fg-sec">
-            {fallbackLabel || 'LUVEN TEMPLATE'}
+            {fallbackLabel || 'PRATINJAU TEMPLATE'}
           </span>
         </div>
       )}
@@ -607,90 +607,6 @@ export function ProgressiveImage({
         </>
       )}
     </div>
-  )
-}
-
-const AVAILABLE_EDITORIAL_SLUGS = new Set([
-  'hero-main',
-  'pricing-hero',
-  'feature-template',
-])
-
-/**
- * 2D Editorial PNG Illustration Renderer + Clean Fixed-Ratio Slot (Rule A).
- * - Renders <picture>/<img> with @1x (800w) & @2x (1600w) PNG srcSet, sizes,
- *   explicit width/height, lazy/eager + fetchPriority, decoding="async".
- * - When an AI PNG file has not been generated yet (due to quota limits),
- *   renders a clean, zero-CLS reserved slot frame with ZERO hand-coded shapes.
- */
-export function EditorialIllustration({
-  slug,
-  alt,
-  ratio = '16:9',
-  sizes = '(max-width: 768px) 100vw, 640px',
-  priority = false,
-  className = '',
-}: {
-  slug: string
-  alt: string
-  ratio?: '16:9' | '16:10' | '20:9' | '4:3'
-  sizes?: string
-  priority?: boolean
-  className?: string
-}) {
-  const [failed, setFailed] = useState(!AVAILABLE_EDITORIAL_SLUGS.has(slug))
-  const [loaded, setLoaded] = useState(false)
-
-  const spec =
-    ratio === '16:10'
-      ? { w: 800, h: 500, aspect: 'aspect-[16/10]' }
-      : ratio === '20:9'
-        ? { w: 800, h: 360, aspect: 'aspect-[20/9]' }
-        : ratio === '4:3'
-          ? { w: 800, h: 600, aspect: 'aspect-[4/3]' }
-          : { w: 800, h: 450, aspect: 'aspect-video' }
-
-  const src1x = `/illustrations/${slug}-800.png`
-  const src2x = `/illustrations/${slug}-1600.png`
-
-  return (
-    <figure
-      className={`relative m-0 w-full overflow-hidden rounded-2xl border border-edge bg-surface ${spec.aspect} ${className}`}
-    >
-      {failed ? (
-        <div
-          role="img"
-          aria-label={alt}
-          className="flex h-full w-full flex-col items-center justify-center gap-1.5 bg-surface px-4 text-center"
-        >
-          <span className="rounded-md border border-edge bg-elevated px-2.5 py-1 font-mono text-[11px] text-fg-sec">
-            {slug}-800.png · {spec.w}×{spec.h}
-          </span>
-          <span className="max-w-[38ch] text-[12px] text-fg-muted">{alt}</span>
-        </div>
-      ) : (
-        <picture className="block h-full w-full">
-          <source srcSet={`${src1x} 800w, ${src2x} 1600w`} sizes={sizes} type="image/png" />
-          {!priority && !loaded && (
-            <span aria-hidden="true" className="absolute inset-0 animate-pulse bg-elevated" />
-          )}
-          <img
-            src={src1x}
-            alt={alt}
-            width={spec.w}
-            height={spec.h}
-            loading={priority ? 'eager' : 'lazy'}
-            fetchPriority={priority ? 'high' : undefined}
-            decoding={priority ? 'sync' : 'async'}
-            onLoad={() => setLoaded(true)}
-            onError={() => setFailed(true)}
-            className={`h-full w-full object-cover ${
-              priority ? 'opacity-100' : `transition-opacity duration-300 ${loaded ? 'opacity-100' : 'opacity-0'}`
-            }`}
-          />
-        </picture>
-      )}
-    </figure>
   )
 }
 

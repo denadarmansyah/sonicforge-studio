@@ -723,7 +723,7 @@ export function AppearanceStudio({
 
           <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-edge bg-bg p-4">
             <div>
-              <span className="block text-[13px] font-semibold text-fg">Gambar Open Graph Kustom (1200×630)</span>
+              <span className="block text-[13px] font-semibold text-fg">Gambar Pratinjau Sosial Kustom</span>
               <span className="block text-[12px] text-fg-sec">
                 {settings.customOgImageUrl ? 'Gambar OG kustom terpasang.' : 'Menggunakan foto profil secara bawaan.'}
               </span>

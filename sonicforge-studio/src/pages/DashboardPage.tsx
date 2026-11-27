@@ -72,12 +72,12 @@ import {
   validateAllowedUrl,
 } from '../lib/validators'
 import { AppearanceStudio } from '../ui/AppearanceStudio'
+import { hasIllustration, Illustration } from '../ui/Illustration'
 import {
   Avatar,
   Badge,
   Button,
   Card,
-  EditorialIllustration,
   IconButton,
   Input,
   LinkButton,
@@ -648,7 +648,7 @@ export function DashboardPage() {
   return (
     <SiteLayout hideFooter>
       <SupabaseSetupPanel compact />
-      <div className="mx-auto max-w-[1280px] px-4 pt-6 pb-28 md:px-6 lg:px-8 lg:pb-14">
+      <div className="mx-auto max-w-[1200px] px-4 pt-6 pb-28 md:px-6 lg:px-8 lg:pb-16">
         {/* Expiry Warning Banner */}
         {expiryNotice && (
           <div className="mb-4 flex flex-col justify-between gap-3 rounded-2xl border border-fg bg-elevated p-4 sm:flex-row sm:items-center">
@@ -790,16 +790,21 @@ export function DashboardPage() {
                     <Skeleton className="h-20 w-full" />
                   </div>
                 ) : links.length === 0 ? (
-                  <Card className="p-6 sm:p-8 text-center">
-                    <div className="mx-auto max-w-[360px]">
-                      <EditorialIllustration
-                        slug="empty-dashboard"
-                        alt="Ilustrasi meja kreator bersih menunggu tautan pertama dihubungkan"
-                        ratio="16:9"
-                        sizes="360px"
-                      />
-                    </div>
-                    <h3 className="mt-5 text-[18px] font-bold text-fg">
+                  <Card className="p-6 text-center sm:p-8">
+                    {hasIllustration('empty-dashboard') ? (
+                      <div className="mx-auto mb-6 max-w-[240px]">
+                        <Illustration
+                          name="empty-dashboard"
+                          alt="Ilustrasi papan kosong dengan tanda tambah di ruang kreatif"
+                          sizes="240px"
+                        />
+                      </div>
+                    ) : (
+                      <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl border border-edge bg-elevated text-fg">
+                        <Link2 size={20} />
+                      </div>
+                    )}
+                    <h3 className="m-0 text-[18px] font-bold text-fg">
                       Tambahkan tautan pertama ke halaman bio kamu
                     </h3>
                     <p className="mx-auto mt-1.5 max-w-[44ch] text-[14px] text-fg-sec">
@@ -953,20 +958,25 @@ export function DashboardPage() {
                     <Skeleton className="h-24 w-full" />
                   </div>
                 ) : templates.length === 0 ? (
-                  <Card className="p-6 sm:p-8 text-center">
-                    <div className="mx-auto max-w-[360px]">
-                      <EditorialIllustration
-                        slug="empty-template"
-                        alt="Ilustrasi map terbuka dan bingkai video vertikal menunggu template CapCut"
-                        ratio="16:9"
-                        sizes="360px"
-                      />
-                    </div>
-                    <h3 className="mt-5 text-[18px] font-bold text-fg">
+                  <Card className="p-6 text-center sm:p-8">
+                    {hasIllustration('empty-templates') ? (
+                      <div className="mx-auto mb-6 max-w-[240px]">
+                        <Illustration
+                          name="empty-templates"
+                          alt="Ilustrasi map terbuka kosong dengan satu klip video"
+                          sizes="240px"
+                        />
+                      </div>
+                    ) : (
+                      <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl border border-edge bg-elevated text-fg">
+                        <Layers size={20} />
+                      </div>
+                    )}
+                    <h3 className="m-0 text-[18px] font-bold text-fg">
                       Tempel template CapCut pertama kamu
                     </h3>
-                    <p className="mx-auto mt-1.5 max-w-[42ch] text-[14px] text-fg-sec">
-                      Masukkan tautan resmi CapCut, unggah thumbnail 4:5, lalu template otomatis muncul di profil dan direktori Jelajah.
+                    <p className="mx-auto mt-2 max-w-[42ch] text-[14px] text-fg-sec">
+                      Masukkan tautan resmi CapCut dan unggah poster pratinjau agar template langsung muncul di profil dan halaman Jelajah.
                     </p>
                     <div className="mt-5">
                       <Button variant="primary" onClick={openNewTemplateModal}>
@@ -1001,7 +1011,7 @@ export function DashboardPage() {
                               src={tpl.thumbnail_url}
                               alt={tpl.title}
                               ratio="4:5"
-                              fallbackLabel="4:5"
+                              fallbackLabel="POSTER"
                             />
                           </div>
 
@@ -1107,8 +1117,8 @@ export function DashboardPage() {
                   <div className="flex items-center gap-3.5 rounded-xl border border-edge bg-bg p-3.5">
                     <Avatar src={avatarUrl} name={displayName || username} size="lg" />
                     <div className="min-w-0 flex-1">
-                      <span className="block text-[13px] font-semibold text-fg">Foto Profil (1:1)</span>
-                      <span className="block text-[11.5px] text-fg-sec">Otomatis 512×512 WebP</span>
+                      <span className="block text-[13px] font-semibold text-fg">Foto Profil</span>
+                      <span className="block text-[11.5px] text-fg-sec">Dioptimasi otomatis ke WebP</span>
                       <div className="mt-2 flex gap-2">
                         <Button
                           variant="secondary"
@@ -1130,8 +1140,8 @@ export function DashboardPage() {
 
                   <div className="flex flex-col justify-between rounded-xl border border-edge bg-bg p-3.5">
                     <div>
-                      <span className="block text-[13px] font-semibold text-fg">Banner Sampul (3:1)</span>
-                      <span className="block text-[11.5px] text-fg-sec">Opsional · 1600×534 WebP</span>
+                      <span className="block text-[13px] font-semibold text-fg">Banner Sampul</span>
+                      <span className="block text-[11.5px] text-fg-sec">Opsional · Dioptimasi ke WebP</span>
                     </div>
                     <div className="mt-3 flex gap-2">
                       <Button
@@ -1827,7 +1837,7 @@ export function DashboardPage() {
         open={tplModalOpen}
         onClose={() => setTplModalOpen(false)}
         title={editingTplId ? 'Ubah Template CapCut' : 'Tambah Template CapCut'}
-        description="Tempel tautan resmi template CapCut kamu, unggah thumbnail 4:5, dan beri judul."
+        description="Tempel tautan resmi template CapCut kamu, unggah poster pratinjau, dan beri judul."
         maxWidth="max-w-[660px]"
       >
         <input
@@ -1937,14 +1947,14 @@ export function DashboardPage() {
 
           <div className="flex flex-col gap-3">
             <span className="font-mono text-[11px] uppercase tracking-wider text-fg-sec">
-              Thumbnail (4:5)
+              Poster Pratinjau
             </span>
             <div className="overflow-hidden rounded-2xl border border-edge bg-bg">
               <ProgressiveImage
                 src={tplThumb}
                 alt="Pratinjau thumbnail template"
                 ratio="4:5"
-                fallbackLabel="UNGGAH 4:5"
+                fallbackLabel="UNGGAH POSTER"
               />
               <div className="p-3">
                 <p className="m-0 line-clamp-2 text-[13px] font-bold text-fg">

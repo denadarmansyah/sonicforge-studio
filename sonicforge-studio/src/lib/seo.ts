@@ -25,7 +25,7 @@ export function useDocumentMeta({
   useEffect(() => {
     document.title = title
     const fullUrl = `${SITE_ORIGIN}${path.startsWith('/') ? path : `/${path}`}`
-    const ogImg = image || `${SITE_ORIGIN}/favicon.svg`
+    const ogImg = image || `${SITE_ORIGIN}/og-image.png`
 
     upsertMeta('name', 'description', description)
     upsertMeta('property', 'og:title', title)

@@ -3,4 +3,4 @@ dist
 .vercel
 .env
 .env.local
-/raw-assets
+raw-assets/

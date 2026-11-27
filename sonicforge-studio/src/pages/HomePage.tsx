@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
+import { AnimatePresence, motion } from 'framer-motion'
 import {
   ArrowRight,
   ArrowUpRight,
@@ -9,122 +9,55 @@ import {
   ChevronDown,
   Compass,
   Link2,
-  QrCode,
-  ShieldCheck,
+  SlidersHorizontal,
   Smartphone,
   UserPlus,
 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { fetchPublicFeed, recordAnalyticsEvent } from '../lib/platformStore'
 import { useDocumentMeta } from '../lib/seo'
-import { DEFAULT_FREE_THEME, DEFAULT_PROFILE_SETTINGS } from '../lib/themeConfig'
 import { CreatorTemplate, Profile } from '../lib/types'
 import { VerifiedBadgeIcon } from '../ui/BrandIcons'
+import { hasIllustration, Illustration } from '../ui/Illustration'
 import { Logo } from '../ui/Logo'
-import {
-  Avatar,
-  Badge,
-  Card,
-  EASE_SMOOTH,
-  EditorialIllustration,
-  LinkButton,
-  UnstyledButton,
-} from '../ui/primitives'
-import { PublicProfileRenderer, TemplateCard } from '../ui/ProfileViewCard'
+import { Avatar, Badge, Card, EASE_SMOOTH, LinkButton, UnstyledButton } from '../ui/primitives'
+import { TemplateCard } from '../ui/ProfileViewCard'
 import { SiteLayout } from '../ui/SiteLayout'
-
-const HERO_WORDS = ['Satu', 'Halaman', 'Resmi', 'untuk', 'TikTok', '&', 'Template', 'CapCut']
-
-const EXAMPLE_PLACEHOLDER_PROFILE: Profile = {
-  id: '00000000-0000-0000-0000-000000000000',
-  username: 'namakamu',
-  display_name: 'Nama Kreator Kamu',
-  bio: 'Tempat menaruh deskripsi singkat gaya edit kamu dan jadwal rilis template baru.',
-  avatar_url: null,
-  banner_url: null,
-  tiktok_url: 'https://www.tiktok.com/@namakamu',
-  instagram_url: null,
-  youtube_url: null,
-  website_url: null,
-  category: 'Transisi',
-  is_verified: true,
-  is_featured: false,
-  is_banned: false,
-  onboarding_completed: true,
-  plan: 'free',
-  plan_expires_at: null,
-  theme: DEFAULT_FREE_THEME,
-  settings: DEFAULT_PROFILE_SETTINGS,
-  referred_by: null,
-  created_at: '2026-01-01T00:00:00.000Z',
-}
-
-const EXAMPLE_PLACEHOLDER_TEMPLATES: CreatorTemplate[] = [
-  {
-    id: '00000000-0000-0000-0000-000000000001',
-    owner_id: '00000000-0000-0000-0000-000000000000',
-    title: '[Contoh Tampilan] Judul Template CapCut Kamu',
-    description: 'Kartu otomatis mengarahkan penonton ke tautan resmi CapCut.',
-    capcut_url: 'https://www.capcut.com/templates',
-    tiktok_url: null,
-    thumbnail_url: null,
-    tags: ['transisi', 'beat-sync'],
-    song_title: 'Potongan Sound Original',
-    sort_order: 0,
-    status: 'active',
-    created_at: '2026-01-01T00:00:00.000Z',
-  },
-  {
-    id: '00000000-0000-0000-0000-000000000002',
-    owner_id: '00000000-0000-0000-0000-000000000000',
-    title: '[Contoh Tampilan] Template Kedua di Galeri',
-    description: '',
-    capcut_url: 'https://www.capcut.com/templates',
-    tiktok_url: null,
-    thumbnail_url: null,
-    tags: ['lirik', 'sinematik'],
-    song_title: 'Audio Studio 44.1 kHz',
-    sort_order: 1,
-    status: 'active',
-    created_at: '2026-01-01T00:00:00.000Z',
-  },
-]
 
 const FAQS = [
   {
     q: 'Apakah membuat halaman profil di Luven berbayar?',
-    a: 'Tidak. Pendaftaran akun, klaim alamat luven.my.id/@username, penempatan tautan template CapCut, kode QR, hingga pemakaian Alat Audio Studio dapat digunakan gratis.',
+    a: 'Tidak. Pendaftaran akun, klaim alamat luven.my.id/@username, penempatan hingga 8 link aktif, galeri template CapCut, kode QR, dan Alat Audio Studio dapat digunakan gratis tanpa batas waktu.',
   },
   {
-    q: 'Apakah Luven mengambil video dari akun TikTok atau CapCut saya secara otomatis?',
-    a: 'Tidak. Luven tidak melakukan scraping. Anda memegang kendali penuh atas judul, gambar thumbnail 4:5, dan tautan resmi CapCut/TikTok yang ingin ditampilkan.',
+    q: 'Apa tambahan yang saya dapat pada paket Pro?',
+    a: 'Paket Pro membuka jumlah link tanpa batas, Studio Tampilan penuh (24+ tema, warna kustom, gradasi, foto latar, 12 pasangan font), penjadwalan link, grup lipat, sembunyikan CTA Luven, serta analitik 90 hari.',
   },
   {
-    q: 'Bagaimana tampilan tautan saya saat dibagikan ke bio TikTok?',
-    a: 'Setiap halaman /@username memiliki metadata Open Graph khusus (nama kreator, bio, dan foto profil) sehingga tampil rapi saat dibagikan.',
+    q: 'Apakah Luven mengambil video dari akun TikTok atau CapCut secara otomatis?',
+    a: 'Tidak. Luven tidak melakukan scraping. Kamu memegang kendali penuh atas judul, poster pratinjau, dan tautan resmi CapCut atau TikTok yang ingin ditampilkan.',
   },
   {
     q: 'Apakah data pribadi pengunjung halaman saya direkam di analitik?',
-    a: 'Tidak. Analitik Luven hanya menghitung agregat harian kunjungan halaman dan jumlah klik tombol tanpa menyimpan alamat IP atau identitas pengunjung.',
+    a: 'Tidak. Analitik Luven hanya menghitung angka agregat harian kunjungan halaman dan jumlah klik tombol tanpa menyimpan alamat IP atau identitas pengunjung.',
   },
   {
     q: 'Apa fungsi menu Alat Studio di bagian atas situs?',
-    a: 'Alat Studio (/studio) memungkinkan Anda mengekstrak suara dari berkas video (.mp4, .mov, .webm), mengatur EQ/pitch/reverb, lalu mengunduhnya sebagai MP3 atau WAV untuk bahan template Anda.',
+    a: 'Alat Studio (/studio) memungkinkan kamu mengekstrak suara dari berkas video, mengatur EQ, pitch, dan reverb, lalu mengunduhnya sebagai MP3 atau WAV untuk bahan konten.',
   },
 ]
 
 export function HomePage() {
   const { user, profile } = useAuth()
-  const reduce = useReducedMotion()
   const [recentCreators, setRecentCreators] = useState<Profile[]>([])
   const [recentTemplates, setRecentTemplates] = useState<CreatorTemplate[]>([])
   const [feedLoaded, setFeedLoaded] = useState(false)
   const [openFaq, setOpenFaq] = useState<number | null>(0)
 
   useDocumentMeta({
-    title: 'Luven — Halaman Promosi Kreator TikTok & Template CapCut (luven.my.id)',
+    title: 'Luven — Halaman Link-in-Bio Kreator TikTok & Template CapCut',
     description:
-      'Buat halaman profil luven.my.id/@username dalam hitungan menit untuk mempromosikan akun TikTok dan katalog template CapCut Anda.',
+      'Buat halaman luven.my.id/@username dalam hitungan menit untuk mempromosikan akun TikTok, daftar tautan resmi, dan katalog template CapCut kamu.',
     path: '/',
   })
 
@@ -153,453 +86,408 @@ export function HomePage() {
 
   return (
     <SiteLayout>
-      {/* =====================================================================
-          1. HARDWARE-INSPIRED HERO SECTION
-          ===================================================================== */}
-      <section className="hw-grid-bg relative overflow-hidden border-b border-edge">
-        <div className="mx-auto max-w-[1280px] px-4 py-[clamp(3rem,6vw,5.5rem)] md:px-6 lg:px-8">
-          <div className="grid grid-cols-1 items-center gap-10 lg:grid-cols-[1.05fr_0.95fr] lg:gap-12">
-            {/* Left Copy & Hardware Deck Strip */}
-            <div>
-              <motion.div
-                initial={reduce ? false : { opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, ease: EASE_SMOOTH }}
-                className="inline-flex items-center gap-2.5 rounded-full border border-edge bg-surface px-3.5 py-1.5 font-mono text-[11.5px] text-fg-sec"
-              >
-                <Logo variant="symbol" size={20} animate className="text-fg" />
-                <span>DIREKTORI KREATOR TIKTOK & CAPCUT</span>
-              </motion.div>
+      {/* 1. HERO (6/6 Desktop Split, Single Column <1024px: Text First, Image Second) */}
+      <section className="border-b border-edge">
+        <div className="mx-auto max-w-[1200px] px-4 py-16 md:px-6 lg:px-8 lg:py-28">
+          <div className="grid grid-cols-4 items-center gap-8 md:grid-cols-8 lg:grid-cols-12 lg:gap-6">
+            <div className="col-span-4 max-w-[560px] md:col-span-8 lg:col-span-6">
+              <div className="inline-flex items-center gap-2 rounded-full border border-edge bg-surface px-3 py-1.5 font-mono text-[11px] uppercase tracking-wider text-fg-sec">
+                <Logo variant="symbol" size={18} className="text-fg" />
+                <span>Platform Kreator TikTok & CapCut</span>
+              </div>
 
-              <h1 className="mt-5 text-[clamp(2.25rem,4.6vw+0.75rem,4.15rem)] font-extrabold leading-[1.05] tracking-[-0.03em] text-balance text-fg">
-                {HERO_WORDS.map((word, idx) => {
-                  const isHighlight = word === 'TikTok' || word === 'CapCut'
-                  return (
-                    <span
-                      key={word + idx}
-                      className="mr-[0.24em] inline-block overflow-hidden pb-1 align-bottom last:mr-0"
-                    >
-                      <motion.span
-                        className={`inline-block ${isHighlight ? 'text-accent' : ''}`}
-                        initial={reduce ? false : { y: '24%' }}
-                        animate={{ y: '0%' }}
-                        transition={{
-                          duration: 0.38,
-                          delay: idx * 0.025,
-                          ease: EASE_SMOOTH,
-                        }}
-                      >
-                        {word}
-                      </motion.span>
-                    </span>
-                  )
-                })}
+              <h1 className="mt-6 text-[32px] font-extrabold leading-[1.06] tracking-[-0.03em] text-fg sm:text-[44px] lg:text-[52px]">
+                Satu halaman link-in-bio rapi untuk akun TikTok dan template CapCut.
               </h1>
 
-              <p className="mt-5 max-w-[54ch] text-[clamp(1rem,0.9vw+0.8rem,1.1875rem)] leading-relaxed text-balance text-fg-sec">
-                Buat halaman <span className="font-mono text-fg">luven.my.id/@username</span> dalam hitungan menit. Tempel akun TikTok, susun katalog template CapCut Anda, dan bagikan satu tautan bersih di bio.
+              <p className="mt-4 text-[15px] leading-relaxed text-fg-sec sm:text-[16px]">
+                Klaim <span className="font-mono text-fg">luven.my.id/@username</span> dalam dua menit. Susun daftar tautan penting, pamerkan katalog template CapCut, dan pantau klik audiens dari satu dasbor.
               </p>
 
-              <div className="mt-7 flex flex-col items-stretch gap-3 min-[480px]:flex-row min-[480px]:flex-wrap min-[480px]:items-center">
-                <LinkButton to={primaryHref} variant="primary" size="lg" className="w-full min-[480px]:w-auto">
-                  <UserPlus size={17} />
-                  <span>{user ? 'Buka Dasbor Kamu' : 'Buat halaman kamu'}</span>
+              <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
+                <LinkButton to={primaryHref} variant="primary" size="lg">
+                  <UserPlus size={18} />
+                  <span>{user ? 'Buka Dasbor' : 'Buat halaman kamu'}</span>
                   <ArrowRight size={16} />
                 </LinkButton>
-
-                <LinkButton to="/explore" variant="secondary" size="lg" className="w-full min-[480px]:w-auto">
-                  <Compass size={17} />
+                <LinkButton to="/explore" variant="secondary" size="lg">
+                  <Compass size={18} />
                   <span>Jelajahi kreator</span>
                 </LinkButton>
               </div>
-
-              {/* Clean Typographic Spec Strip (Zero CSS-shape illustrations) */}
-              <div className="mt-9 grid grid-cols-1 gap-2.5 sm:grid-cols-3">
-                {[
-                  { icon: Smartphone, label: 'SETUP PROFIL', value: '< 2 MENIT' },
-                  { icon: Compass, label: 'RASIO KARTU', value: '4:5 VERTIKAL' },
-                  { icon: AudioWaveform, label: 'KOMPRESI', value: 'WEBP OTOMATIS' },
-                ].map((spec) => {
-                  const Icon = spec.icon
-                  return (
-                    <div
-                      key={spec.label}
-                      className="flex items-center gap-3 rounded-xl border border-edge bg-surface px-3.5 py-2.5"
-                    >
-                      <Icon size={18} className="shrink-0 text-fg-sec" />
-                      <div className="min-w-0">
-                        <div className="font-mono text-[10px] uppercase tracking-wider text-fg-sec">
-                          {spec.label}
-                        </div>
-                        <div className="font-mono text-[12px] font-medium tabular-nums text-fg">
-                          {spec.value}
-                        </div>
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
             </div>
 
-            {/* Right Column: Hero 2D Editorial Illustration + Authentic Live Profile Mockup */}
-            <div className="relative space-y-4">
-              <EditorialIllustration
-                slug="hero-main"
-                alt="Ilustrasi meja kreator video pendek dengan ponsel ber-timeline vertikal, headphone studio, dan mikrofon"
-                ratio="16:9"
-                sizes="(max-width: 1024px) 100vw, 560px"
+            <div className="col-span-4 md:col-span-8 lg:col-span-6">
+              <Illustration
+                name="hero-main"
+                alt="Ilustrasi kreator video pendek memakai headphone sedang mengedit video pada layar ponsel"
+                sizes="(max-width: 1023px) 100vw, 560px"
                 priority
               />
-              <div className="rounded-[28px] border border-edge bg-elevated p-3 sm:p-4">
-                <div className="mb-3 flex items-center justify-between gap-2 px-1">
-                  <div className="flex items-center gap-1.5" aria-hidden="true">
-                    <span className="h-2.5 w-2.5 rounded-full bg-edge" />
-                    <span className="h-2.5 w-2.5 rounded-full bg-edge" />
-                    <span className="h-2.5 w-2.5 rounded-full bg-accent" />
-                  </div>
-                  <div className="rounded-md border border-edge bg-bg px-3 py-1 font-mono text-[11px] text-fg-sec">
-                    luven.my.id/@namakamu
-                  </div>
-                  <Badge variant="accent">Contoh Tampilan</Badge>
-                </div>
-
-                <div className="rounded-2xl bg-bg p-3 sm:p-4">
-                  <PublicProfileRenderer
-                    profile={EXAMPLE_PLACEHOLDER_PROFILE}
-                    templates={EXAMPLE_PLACEHOLDER_TEMPLATES}
-                    previewBadge="CONTOH TATA LETAK PROFIL"
-                    compactPreview
-                  />
-                </div>
-              </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* =====================================================================
-          2. LIVE COMMUNITY DIRECTORY SECTION (Real DB Data or Honest Empty State)
-          ===================================================================== */}
-      <section className="mx-auto max-w-[1280px] px-4 py-[clamp(3.5rem,6vw,6rem)] md:px-6 lg:px-8">
-        <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
-          <div>
-            <span className="font-mono text-[11px] uppercase tracking-widest text-accent">
-              Kiriman Komunitas
+      {/* 2. EMPAT FITUR UTAMA (12-Col Grid, Equal-Height Cards, Padding 24px: Image/Icon -> Title -> Desc -> Action) */}
+      <section className="border-b border-edge">
+        <div className="mx-auto max-w-[1200px] px-4 py-16 md:px-6 lg:px-8 lg:py-28">
+          <div className="max-w-[560px]">
+            <span className="font-mono text-[11px] font-semibold uppercase tracking-widest text-fg-sec">
+              Ekosistem Kreator
             </span>
-            <h2 className="mt-1.5 text-[clamp(1.625rem,3vw,2.25rem)] font-extrabold tracking-[-0.03em] text-fg">
-              Kreator & Template Terbaru
+            <h2 className="mt-2 text-[24px] font-extrabold leading-[1.08] tracking-[-0.03em] text-fg sm:text-[32px]">
+              Semua alat promosi dan audio dalam satu tempat.
             </h2>
-          </div>
-          <LinkButton to="/explore" variant="outline" size="sm">
-            <span>Buka Halaman Jelajah</span>
-            <ArrowUpRight size={15} />
-          </LinkButton>
-        </div>
-
-        {!feedLoaded ? (
-          <div className="mt-8 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
-            {Array.from({ length: 4 }).map((_, i) => (
-              <div key={i} className="aspect-[4/5] animate-pulse rounded-2xl bg-surface" />
-            ))}
-          </div>
-        ) : recentTemplates.length === 0 && recentCreators.length === 0 ? (
-          <Card className="mt-8 flex flex-col items-start justify-between gap-6 p-6 sm:p-8 lg:flex-row lg:items-center">
-            <div className="max-w-[58ch]">
-              <Badge variant="accent">Siap Menerima Kreator Pertama</Badge>
-              <h3 className="mt-3 text-[20px] font-bold tracking-[-0.02em] text-fg">
-                Belum ada kiriman publik di database saat ini
-              </h3>
-              <p className="mt-1.5 text-[14px] leading-relaxed text-fg-sec">
-                Luven tidak menampilkan profil atau statistik rekayasa. Begitu kreator mendaftar dan menempelkan template CapCut, karya mereka otomatis muncul di bagian ini.
-              </p>
-            </div>
-            <LinkButton to={primaryHref} variant="primary" className="shrink-0">
-              <UserPlus size={16} />
-              <span>Klaim Username Sekarang</span>
-            </LinkButton>
-          </Card>
-        ) : (
-          <div className="mt-8 space-y-8">
-            {recentCreators.length > 0 && (
-              <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2 lg:grid-cols-4">
-                {recentCreators.map((c) => (
-                  <Link key={c.id} to={`/@${c.username}`} className="no-underline">
-                    <Card hoverLift className="flex items-center gap-3 p-4">
-                      <Avatar src={c.avatar_url} name={c.display_name} size="md" />
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-1.5">
-                          <span className="truncate text-[14.5px] font-bold text-fg">
-                            {c.display_name}
-                          </span>
-                          {c.is_verified && <VerifiedBadgeIcon size={14} />}
-                        </div>
-                        <span className="block truncate font-mono text-[12px] text-fg-sec">
-                          @{c.username}
-                        </span>
-                      </div>
-                    </Card>
-                  </Link>
-                ))}
-              </div>
-            )}
-
-            {recentTemplates.length > 0 && (
-              <div className="grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-4">
-                {recentTemplates.map((tpl) => (
-                  <TemplateCard
-                    key={tpl.id}
-                    template={tpl}
-                    showCreator
-                    onCapcutClick={(t) => void recordAnalyticsEvent(t.owner_id, 'capcut_click', t.id)}
-                  />
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-      </section>
-
-      {/* =====================================================================
-          3. HIGH-CONTRAST LIGHT RHYTHM SECTION: CARA KERJA 3 LANGKAH
-             (Asymmetric Bento Layout — Not 3 Identical Cards)
-          ===================================================================== */}
-      <section className="border-y border-edge bg-light-bg text-light-fg">
-        <div className="mx-auto max-w-[1280px] px-4 py-[clamp(3.5rem,6vw,6rem)] md:px-6 lg:px-8">
-          <div className="max-w-[58ch]">
-            <span className="font-mono text-[11.5px] font-semibold uppercase tracking-widest text-light-sec">
-              Alur Kerja Kreator
-            </span>
-            <h2 className="mt-2 text-[clamp(1.75rem,3.2vw,2.625rem)] font-extrabold leading-[1.08] tracking-[-0.03em] text-light-fg">
-              Tiga langkah dari pendaftaran hingga siap dipasang di bio TikTok
-            </h2>
+            <p className="mt-3 text-[15px] leading-relaxed text-fg-sec sm:text-[16px]">
+              Dirancang khusus untuk kebutuhan kreator video pendek tanpa tampilan berantakan.
+            </p>
           </div>
 
-          <div className="mt-10 grid grid-cols-1 gap-5 lg:grid-cols-12">
-            {/* Step 01 — Wide Left */}
-            <div className="rounded-3xl border border-light-edge bg-light-surface p-6 sm:p-8 lg:col-span-7">
-              <div className="flex items-center justify-between">
-                <span className="rounded-lg bg-bg px-3 py-1 font-mono text-[12px] font-bold text-accent">
-                  LANGKAH 01
-                </span>
-                <Link2 size={20} className="text-light-sec" />
-              </div>
-              <h3 className="mt-5 text-[22px] font-bold tracking-[-0.02em] text-light-fg">
-                Klaim alamat luven.my.id/@username kamu
-              </h3>
-              <p className="mt-2 max-w-[52ch] text-[14.5px] leading-relaxed text-light-sec">
-                Pilih username pendek yang sama dengan handle TikTok Anda. Sistem memeriksa ketersediaan secara langsung dan melindungi nama dari duplikasi.
-              </p>
-            </div>
-
-            {/* Step 02 — Tall Right Spanning 2 Rows */}
-            <div className="flex flex-col justify-between rounded-3xl border border-edge bg-bg p-6 text-fg sm:p-8 lg:col-span-5 lg:row-span-2">
+          {/* Row 1: Illustrated Core Product Cards (feature-profile & feature-templates) */}
+          <div className="mt-10 grid grid-cols-4 gap-4 md:grid-cols-8 md:gap-6 lg:grid-cols-12">
+            <Card className="col-span-4 flex h-full flex-col justify-between p-6 md:col-span-4 lg:col-span-6">
               <div>
-                <div className="flex items-center justify-between">
-                  <span className="rounded-lg border border-accent/40 bg-accent/15 px-3 py-1 font-mono text-[12px] font-bold text-accent">
-                    LANGKAH 02
-                  </span>
-                  <Smartphone size={20} className="text-accent" />
-                </div>
-                <h3 className="mt-5 text-[22px] font-bold tracking-[-0.02em] text-fg">
-                  Tempel link template CapCut & urutkan sesuka hati
+                <Illustration
+                  name="feature-profile"
+                  alt="Ilustrasi layar ponsel menampilkan halaman profil link-in-bio dengan daftar tautan rapi"
+                  sizes="(max-width: 767px) 100vw, 540px"
+                  className="mb-6"
+                />
+                <h3 className="m-0 text-[18px] font-bold leading-[1.2] tracking-[-0.02em] text-fg sm:text-[20px]">
+                  Halaman Link-in-Bio Fokus Kreator
                 </h3>
-                <p className="mt-2.5 text-[14.5px] leading-relaxed text-fg-sec">
-                  Salin tautan bagikan dari CapCut, unggah poster 4:5 (otomatis dioptimasi menjadi WebP tajam), tambahkan tag serta nama sound, lalu urutkan posisi kartu dengan geser langsung.
+                <p className="mt-2 text-[15px] leading-relaxed text-fg-sec">
+                  Tampil bersih tanpa gangguan navigasi luar saat dibuka dari bio TikTok maupun Instagram. Kustomisasi penuh lewat Studio Tampilan Pro.
                 </p>
               </div>
-
-              <div className="mt-8 rounded-2xl border border-edge bg-surface p-4 font-mono text-[12px]">
-                <div className="flex items-center justify-between text-fg-sec">
-                  <span>VALIDASI DOMAIN</span>
-                  <span className="font-semibold text-fg">AKTIF</span>
-                </div>
-                <div className="mt-2 truncate rounded-lg border border-edge bg-bg px-3 py-2 text-fg">
-                  https://www.capcut.com/t/...
-                </div>
+              <div className="mt-6">
+                <LinkButton to={primaryHref} variant="secondary" size="md">
+                  <span>Siapkan Halaman Bio</span>
+                  <ArrowRight size={16} />
+                </LinkButton>
               </div>
-            </div>
+            </Card>
 
-            {/* Step 03 — Bottom Left Wide */}
-            <div className="rounded-3xl border border-light-edge bg-light-surface p-6 sm:p-8 lg:col-span-7">
-              <div className="flex items-center justify-between">
-                <span className="rounded-lg bg-bg px-3 py-1 font-mono text-[12px] font-bold text-accent">
-                  LANGKAH 03
-                </span>
-                <BarChart3 size={20} className="text-light-sec" />
+            <Card className="col-span-4 flex h-full flex-col justify-between p-6 md:col-span-4 lg:col-span-6">
+              <div>
+                <Illustration
+                  name="feature-templates"
+                  alt="Ilustrasi tumpukan layar ponsel yang menampilkan bingkai pratinjau video vertikal"
+                  sizes="(max-width: 767px) 100vw, 540px"
+                  className="mb-6"
+                />
+                <h3 className="m-0 text-[18px] font-bold leading-[1.2] tracking-[-0.02em] text-fg sm:text-[20px]">
+                  Katalog Template CapCut Terkurasi
+                </h3>
+                <p className="mt-2 text-[15px] leading-relaxed text-fg-sec">
+                  Tempel tautan resmi CapCut, unggah poster vertikal yang otomatis dioptimasi ke WebP, dan biarkan penonton langsung memakai templatemu.
+                </p>
               </div>
-              <h3 className="mt-5 text-[22px] font-bold tracking-[-0.02em] text-light-fg">
-                Bagikan link atau QR, lalu ukur template mana yang paling diminati
-              </h3>
-              <p className="mt-2 max-w-[52ch] text-[14.5px] leading-relaxed text-light-sec">
-                Setiap kunjungan profil dan klik tombol &ldquo;Pakai di CapCut&rdquo; tercatat rapi dalam grafik 7 dan 30 hari di dasbor Anda.
-              </p>
-            </div>
+              <div className="mt-6">
+                <LinkButton to="/explore" variant="secondary" size="md">
+                  <span>Lihat Direktori Template</span>
+                  <ArrowRight size={16} />
+                </LinkButton>
+              </div>
+            </Card>
+          </div>
+
+          {/* Row 2: Sound Lab & Multitrack Studio Cards */}
+          <div className="mt-6 grid grid-cols-4 gap-4 md:grid-cols-8 md:gap-6 lg:grid-cols-12">
+            <Card className="col-span-4 flex h-full flex-col justify-between p-6 md:col-span-4 lg:col-span-6">
+              <div>
+                {hasIllustration('feature-soundlab') ? (
+                  <Illustration
+                    name="feature-soundlab"
+                    alt="Ilustrasi panel mixer dengan knob, fader, dan gelombang suara"
+                    sizes="(max-width: 767px) 100vw, 540px"
+                    className="mb-6"
+                  />
+                ) : (
+                  <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-xl border border-edge bg-elevated text-fg">
+                    <SlidersHorizontal size={20} />
+                  </div>
+                )}
+                <h3 className="m-0 text-[18px] font-bold leading-[1.2] tracking-[-0.02em] text-fg sm:text-[20px]">
+                  Perpustakaan Efek & Sound Designer
+                </h3>
+                <p className="mt-2 text-[15px] leading-relaxed text-fg-sec">
+                  Racik sub-bass drop, whoosh transisi, dan preset karakter suara langsung di browser untuk memperkuat ritme potongan video pendek.
+                </p>
+              </div>
+              <div className="mt-6">
+                <LinkButton to="/studio" variant="secondary" size="md">
+                  <span>Coba Sound Designer</span>
+                  <ArrowRight size={16} />
+                </LinkButton>
+              </div>
+            </Card>
+
+            <Card className="col-span-4 flex h-full flex-col justify-between p-6 md:col-span-4 lg:col-span-6">
+              <div>
+                {hasIllustration('feature-studio') ? (
+                  <Illustration
+                    name="feature-studio"
+                    alt="Ilustrasi laptop dengan timeline audio multitrack"
+                    sizes="(max-width: 767px) 100vw, 540px"
+                    className="mb-6"
+                  />
+                ) : (
+                  <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-xl border border-edge bg-elevated text-fg">
+                    <AudioWaveform size={20} />
+                  </div>
+                )}
+                <h3 className="m-0 text-[18px] font-bold leading-[1.2] tracking-[-0.02em] text-fg sm:text-[20px]">
+                  Editor Audio Multitrack di Browser
+                </h3>
+                <p className="mt-2 text-[15px] leading-relaxed text-fg-sec">
+                  Ekstrak audio dari berkas video mentah, sesuaikan equalizer 5-band, kompresor, serta reverb, lalu ekspor ke WAV atau MP3 jernih.
+                </p>
+              </div>
+              <div className="mt-6">
+                <LinkButton to="/studio" variant="secondary" size="md">
+                  <span>Buka Alat Studio</span>
+                  <ArrowRight size={16} />
+                </LinkButton>
+              </div>
+            </Card>
           </div>
         </div>
       </section>
 
-      {/* =====================================================================
-          4. FEATURE SYSTEM BENTO (Profile, Analytics, QR, Audio Studio)
-          ===================================================================== */}
-      <section className="mx-auto max-w-[1280px] px-4 py-[clamp(3.5rem,6vw,6rem)] md:px-6 lg:px-8">
-        <div className="max-w-[56ch]">
-          <span className="font-mono text-[11px] uppercase tracking-widest text-accent">
-            Dirancang Khusus Kreator
-          </span>
-          <h2 className="mt-2 text-[clamp(1.625rem,3vw,2.375rem)] font-extrabold tracking-[-0.03em] text-fg">
-            Peralatan lengkap dalam satu ekosistem
-          </h2>
-        </div>
+      {/* 3. ALUR KERJA 3 LANGKAH (Light Contrast Section, Equal-Height Cards) */}
+      <section className="border-b border-edge bg-light-bg text-light-fg">
+        <div className="mx-auto max-w-[1200px] px-4 py-16 md:px-6 lg:px-8 lg:py-28">
+          <div className="max-w-[560px]">
+            <span className="font-mono text-[11px] font-semibold uppercase tracking-widest text-light-sec">
+              Cara Kerja
+            </span>
+            <h2 className="mt-2 text-[24px] font-extrabold leading-[1.08] tracking-[-0.03em] text-light-fg sm:text-[32px]">
+              Tiga langkah hingga siap dipasang di bio TikTok.
+            </h2>
+          </div>
 
-        <div className="mt-8 grid grid-cols-1 gap-5 md:grid-cols-12">
-          <Card className="p-6 sm:p-7 md:col-span-7">
-            <EditorialIllustration
-              slug="feature-profile"
-              alt="Ilustrasi halaman profil link-in-bio kreator pada layar ponsel beserta kode QR"
-              ratio="16:9"
-              sizes="(max-width: 768px) 100vw, 620px"
-              className="mb-5 rounded-xl bg-bg"
-            />
-            <Smartphone size={20} className="text-accent" />
-            <h3 className="mt-3 text-[19px] font-bold text-fg">
-              Halaman Profil Cepat di Browser Dalam Aplikasi TikTok
-            </h3>
-            <p className="mt-2 text-[14px] leading-relaxed text-fg-sec">
-              Mayoritas audiens membuka link bio dari ponsel. Halaman profil Luven dimuat ringan, fokus penuh ke daftar tautan kreator, dan mendukung kustomisasi Studio Tampilan Pro.
-            </p>
-          </Card>
-
-          <Card className="p-6 sm:p-7 md:col-span-5">
-            <EditorialIllustration
-              slug="feature-template"
-              alt="Ilustrasi kartu template video vertikal beserta penanda pemotongan timeline"
-              ratio="16:9"
-              sizes="(max-width: 768px) 100vw, 440px"
-              className="mb-5 rounded-xl bg-bg"
-            />
-            <QrCode size={20} className="text-accent" />
-            <h3 className="mt-3 text-[19px] font-bold text-fg">Katalog Template & Kode QR</h3>
-            <p className="mt-2 text-[14px] leading-relaxed text-fg-sec">
-              Susun koleksi template CapCut vertikal 4:5 dan unduh kode QR PNG tajam untuk dibagikan ke pengikutmu.
-            </p>
-          </Card>
-
-          <Card className="p-6 sm:p-7 md:col-span-5">
-            <EditorialIllustration
-              slug="feature-soundlab"
-              alt="Ilustrasi headphone studio dengan gelombang suara konsentris dan modul equalizer"
-              ratio="16:9"
-              sizes="(max-width: 768px) 100vw, 440px"
-              className="mb-5 rounded-xl bg-bg"
-            />
-            <ShieldCheck size={20} className="text-accent" />
-            <h3 className="mt-3 text-[19px] font-bold text-fg">
-              Tautan Terverifikasi & Bebas Spam
-            </h3>
-            <p className="mt-2 text-[14px] leading-relaxed text-fg-sec">
-              Setiap tautan keluar diperiksa di sisi klien dan database agar hanya mengarah ke domain resmi melalui HTTPS.
-            </p>
-          </Card>
-
-          <Card className="flex flex-col justify-between p-6 sm:p-7 md:col-span-7">
-            <div>
-              <EditorialIllustration
-                slug="feature-studio"
-                alt="Ilustrasi editor audio multitrack dengan monitor studio dan blok gelombang suara"
-                ratio="16:9"
-                sizes="(max-width: 768px) 100vw, 620px"
-                className="mb-5 rounded-xl bg-bg"
-              />
-              <AudioWaveform size={20} className="text-accent" />
-              <h3 className="mt-3 text-[19px] font-bold text-fg">
-                Dilengkapi Alat Audio Studio di Browser
-              </h3>
-              <p className="mt-2 text-[14px] leading-relaxed text-fg-sec">
-                Butuh mengekstrak suara dari video mentah atau menyesuaikan sub-bass, pitch, dan reverb sebelum meracik template di CapCut? Gunakan editor multitrack bawaan dan ekspor ke MP3 320 kbps atau WAV.
-              </p>
-            </div>
-            <div className="mt-5">
-              <LinkButton to="/studio" variant="secondary" size="sm">
-                <span>Buka Alat Audio Studio</span>
-                <ArrowRight size={15} />
-              </LinkButton>
-            </div>
-          </Card>
-        </div>
-      </section>
-
-      {/* =====================================================================
-          5. FAQ ACCORDION (Light Rhythm Section) & CLOSING CTA
-          ===================================================================== */}
-      <section className="border-t border-light-edge bg-light-bg text-light-fg">
-        <div className="mx-auto max-w-[840px] px-4 py-[clamp(3.5rem,6vw,6rem)] md:px-6">
-          <h2 className="text-center text-[clamp(1.625rem,3vw,2.25rem)] font-extrabold tracking-[-0.03em] text-light-fg">
-            Pertanyaan Umum
-          </h2>
-
-          <div className="mt-8 space-y-3">
-            {FAQS.map((item, idx) => {
-              const isOpen = openFaq === idx
+          <div className="mt-10 grid grid-cols-4 gap-4 md:grid-cols-8 md:gap-6 lg:grid-cols-12">
+            {[
+              {
+                icon: Link2,
+                step: 'LANGKAH 01',
+                title: 'Klaim alamat @username',
+                desc: 'Pilih nama pendek yang sama dengan akun TikTok kamu agar pengikut langsung mengenali tautan resmimu.',
+              },
+              {
+                icon: Smartphone,
+                step: 'LANGKAH 02',
+                title: 'Susun tautan & template',
+                desc: 'Tambahkan link toko, kontak kerja sama, sosial media, serta kartu template CapCut sesuai urutan prioritas.',
+              },
+              {
+                icon: BarChart3,
+                step: 'LANGKAH 03',
+                title: 'Bagikan & pantau klik',
+                desc: 'Tempel tautan di bio atau bagikan kode QR, lalu lihat link dan template mana yang paling diminati audiens.',
+              },
+            ].map((item) => {
+              const Icon = item.icon
               return (
                 <div
-                  key={item.q}
-                  className="overflow-hidden rounded-2xl border border-light-edge bg-light-surface"
+                  key={item.step}
+                  className="col-span-4 flex h-full flex-col justify-between rounded-2xl border border-light-edge bg-light-surface p-6 md:col-span-8 lg:col-span-4"
                 >
-                  <UnstyledButton
-                    aria-expanded={isOpen}
-                    onClick={() => setOpenFaq(isOpen ? null : idx)}
-                    className="flex min-h-14 w-full items-center justify-between gap-4 px-5 py-4 text-left text-[15px] font-semibold text-light-fg"
-                  >
-                    <span>{item.q}</span>
-                    <ChevronDown
-                      size={18}
-                      className={`shrink-0 text-light-sec transition-transform duration-200 ${
-                        isOpen ? 'rotate-180 text-light-fg' : ''
-                      }`}
-                    />
-                  </UnstyledButton>
-                  <AnimatePresence initial={false}>
-                    {isOpen && (
-                      <motion.div
-                        initial={{ opacity: 0, y: -4 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -4 }}
-                        transition={{ duration: 0.18, ease: EASE_SMOOTH }}
-                      >
-                        <p className="m-0 border-t border-light-edge px-5 py-4 text-[14px] leading-relaxed text-light-sec">
-                          {item.a}
-                        </p>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
+                  <div>
+                    <div className="mb-6 flex items-center justify-between">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-[10px] border border-light-edge bg-light-bg text-light-fg">
+                        <Icon size={18} />
+                      </div>
+                      <span className="font-mono text-[11px] font-semibold text-light-sec">
+                        {item.step}
+                      </span>
+                    </div>
+                    <h3 className="m-0 text-[18px] font-bold leading-[1.2] tracking-[-0.02em] text-light-fg sm:text-[20px]">
+                      {item.title}
+                    </h3>
+                    <p className="mt-2 text-[15px] leading-relaxed text-light-sec">{item.desc}</p>
+                  </div>
                 </div>
               )
             })}
           </div>
+        </div>
+      </section>
 
-          <div className="mt-12 overflow-hidden rounded-2xl border border-edge bg-bg text-fg">
-            <EditorialIllustration
-              slug="cta-banner"
-              alt="Ilustrasi meja siaran kreator dengan lampu cincin, ponsel di tripod, dan lengan mikrofon"
-              ratio="20:9"
-              sizes="(max-width: 840px) 100vw, 800px"
-              className="rounded-none border-0 border-b border-edge"
-            />
-            <div className="flex flex-col items-center justify-between gap-5 p-7 text-center sm:flex-row sm:text-left">
-              <div>
-                <h3 className="m-0 text-[20px] font-extrabold tracking-[-0.02em] text-fg">
-                  Siap merapikan tautan bio & template kamu?
+      {/* 4. KIRIMAN KOMUNITAS TERBARU */}
+      <section className="border-b border-edge">
+        <div className="mx-auto max-w-[1200px] px-4 py-16 md:px-6 lg:px-8 lg:py-28">
+          <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
+            <div className="max-w-[560px]">
+              <span className="font-mono text-[11px] font-semibold uppercase tracking-widest text-fg-sec">
+                Komunitas Luven
+              </span>
+              <h2 className="mt-2 text-[24px] font-extrabold leading-[1.08] tracking-[-0.03em] text-fg sm:text-[32px]">
+                Kreator & template terbaru
+              </h2>
+            </div>
+            <LinkButton to="/explore" variant="outline" size="md">
+              <span>Buka Halaman Jelajah</span>
+              <ArrowUpRight size={16} />
+            </LinkButton>
+          </div>
+
+          {!feedLoaded ? (
+            <div className="mt-8 grid grid-cols-4 gap-4 md:grid-cols-8 md:gap-6 lg:grid-cols-12">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div
+                  key={i}
+                  className="col-span-2 aspect-[4/5] animate-pulse rounded-2xl bg-surface md:col-span-4 lg:col-span-3"
+                />
+              ))}
+            </div>
+          ) : recentTemplates.length === 0 && recentCreators.length === 0 ? (
+            <Card className="mt-8 flex flex-col items-start justify-between gap-6 p-6 sm:flex-row sm:items-center">
+              <div className="max-w-[560px]">
+                <Badge variant="neutral">Direktori Langsung</Badge>
+                <h3 className="mt-3 text-[18px] font-bold tracking-[-0.02em] text-fg sm:text-[20px]">
+                  Siap menampilkan karya kreator pertama
                 </h3>
-                <p className="mt-1 mb-0 text-[14px] text-fg-sec">
-                  Amankan username pilihanmu di luven.my.id hari ini.
+                <p className="mt-2 text-[15px] leading-relaxed text-fg-sec">
+                  Luven hanya menampilkan halaman dan template asli yang didaftarkan pengguna. Klaim username kamu untuk tampil di direktori ini.
                 </p>
               </div>
-              <LinkButton to={primaryHref} variant="primary" size="lg" className="shrink-0">
-                <span>Buat halaman kamu</span>
-                <ArrowRight size={16} />
+              <LinkButton to={primaryHref} variant="primary" size="md">
+                <UserPlus size={16} />
+                <span>Klaim Username</span>
               </LinkButton>
+            </Card>
+          ) : (
+            <div className="mt-8 space-y-8">
+              {recentCreators.length > 0 && (
+                <div className="grid grid-cols-4 gap-4 md:grid-cols-8 md:gap-6 lg:grid-cols-12">
+                  {recentCreators.map((c) => (
+                    <Link
+                      key={c.id}
+                      to={`/@${c.username}`}
+                      className="col-span-4 no-underline md:col-span-4 lg:col-span-3"
+                    >
+                      <Card hoverLift className="flex h-full items-center gap-3 p-6">
+                        <Avatar src={c.avatar_url} name={c.display_name} size="md" />
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-1.5">
+                            <span className="truncate text-[15px] font-bold text-fg">
+                              {c.display_name}
+                            </span>
+                            {c.is_verified && <VerifiedBadgeIcon size={14} />}
+                          </div>
+                          <span className="block truncate font-mono text-[12px] text-fg-sec">
+                            @{c.username}
+                          </span>
+                        </div>
+                      </Card>
+                    </Link>
+                  ))}
+                </div>
+              )}
+
+              {recentTemplates.length > 0 && (
+                <div className="grid grid-cols-4 gap-4 md:grid-cols-8 md:gap-6 lg:grid-cols-12">
+                  {recentTemplates.map((tpl) => (
+                    <div key={tpl.id} className="col-span-2 md:col-span-4 lg:col-span-3">
+                      <TemplateCard
+                        template={tpl}
+                        showCreator
+                        onCapcutClick={(t) =>
+                          void recordAnalyticsEvent(t.owner_id, 'capcut_click', t.id)
+                        }
+                      />
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* 5. FAQ & BANNER CTA PENUTUP */}
+      <section>
+        <div className="mx-auto max-w-[1200px] px-4 py-16 md:px-6 lg:px-8 lg:py-28">
+          <div className="mx-auto max-w-[760px]">
+            <div className="text-center">
+              <span className="font-mono text-[11px] font-semibold uppercase tracking-widest text-fg-sec">
+                Tanya Jawab
+              </span>
+              <h2 className="mt-2 text-[24px] font-extrabold leading-[1.08] tracking-[-0.03em] text-fg sm:text-[32px]">
+                Pertanyaan yang sering diajukan
+              </h2>
+            </div>
+
+            <div className="mt-8 space-y-3">
+              {FAQS.map((item, idx) => {
+                const isOpen = openFaq === idx
+                return (
+                  <Card key={item.q} className="overflow-hidden">
+                    <UnstyledButton
+                      aria-expanded={isOpen}
+                      onClick={() => setOpenFaq(isOpen ? null : idx)}
+                      className="flex min-h-14 w-full items-center justify-between gap-4 px-6 py-4 text-left text-[15px] font-semibold text-fg"
+                    >
+                      <span>{item.q}</span>
+                      <ChevronDown
+                        size={18}
+                        className={`shrink-0 text-fg-sec transition-transform duration-200 ${
+                          isOpen ? 'rotate-180 text-fg' : ''
+                        }`}
+                      />
+                    </UnstyledButton>
+                    <AnimatePresence initial={false}>
+                      {isOpen && (
+                        <motion.div
+                          initial={{ opacity: 0, y: -4 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -4 }}
+                          transition={{ duration: 0.18, ease: EASE_SMOOTH }}
+                        >
+                          <p className="m-0 border-t border-edge px-6 py-4 text-[15px] leading-relaxed text-fg-sec">
+                            {item.a}
+                          </p>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </Card>
+                )
+              })}
             </div>
           </div>
+
+          <Card className="mt-16 overflow-hidden p-6 sm:p-8 lg:mt-24">
+            {hasIllustration('cta-banner') && (
+              <Illustration
+                name="cta-banner"
+                alt="Ilustrasi panorama headphone studio dan gelombang suara di ruang kerja kreatif"
+                sizes="(max-width: 1200px) 100vw, 1136px"
+                className="mb-8"
+              />
+            )}
+            <div className="flex flex-col items-start justify-between gap-6 lg:flex-row lg:items-center">
+              <div className="max-w-[560px]">
+                <h2 className="m-0 text-[24px] font-extrabold leading-[1.08] tracking-[-0.03em] text-fg sm:text-[32px]">
+                  Siap merapikan halaman bio dan katalog templatemu?
+                </h2>
+                <p className="mt-2 mb-0 text-[15px] leading-relaxed text-fg-sec sm:text-[16px]">
+                  Mulai gratis selamanya di luven.my.id atau beralih ke Pro kapan pun dibutuhkan.
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-3">
+                <LinkButton to={primaryHref} variant="primary" size="lg">
+                  <span>Buat halaman kamu</span>
+                  <ArrowRight size={16} />
+                </LinkButton>
+                <LinkButton to="/pricing" variant="secondary" size="lg">
+                  <span>Lihat Paket Harga</span>
+                </LinkButton>
+              </div>
+            </div>
+          </Card>
         </div>
       </section>
     </SiteLayout>

@@ -152,7 +152,7 @@ export function SiteLayout({
       >
         <nav
           aria-label="Navigasi utama"
-          className="mx-auto flex h-16 max-w-[1280px] items-center justify-between gap-4 px-4 md:px-6 lg:h-18 lg:px-8"
+          className="mx-auto flex h-16 max-w-[1200px] items-center justify-between gap-4 px-4 md:px-6 lg:px-8"
         >
           <div className="flex items-center gap-8">
             <Link
@@ -417,9 +417,9 @@ export function SiteLayout({
       {/* Site Footer */}
       {!hideFooter && (
         <footer className="border-t border-edge bg-surface">
-          <div className="mx-auto max-w-[1280px] px-4 py-12 md:px-6 lg:px-8">
-            <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 md:grid-cols-12">
-              <div className="sm:col-span-2 md:col-span-5">
+          <div className="mx-auto max-w-[1200px] px-4 py-16 md:px-6 lg:px-8">
+            <div className="grid grid-cols-4 gap-6 md:grid-cols-8 lg:grid-cols-12">
+              <div className="col-span-4 md:col-span-8 lg:col-span-5">
                 <Logo variant="horizontal" size={128} className="text-fg" />
                 <p className="mt-3 max-w-[38ch] text-[14px] leading-relaxed text-fg-sec">
                   Halaman profil resmi dan direktori template untuk kreator TikTok serta CapCut di Indonesia.
@@ -430,7 +430,7 @@ export function SiteLayout({
                 </div>
               </div>
 
-              <div className="sm:col-span-1 md:col-span-3">
+              <div className="col-span-2 md:col-span-4 lg:col-span-3">
                 <h2 className="font-mono text-[11px] font-semibold uppercase tracking-wider text-fg-sec">
                   Platform
                 </h2>
@@ -458,7 +458,7 @@ export function SiteLayout({
                 </ul>
               </div>
 
-              <div className="sm:col-span-1 md:col-span-4">
+              <div className="col-span-2 md:col-span-4 lg:col-span-4">
                 <h2 className="font-mono text-[11px] font-semibold uppercase tracking-wider text-fg-sec">
                   Kebijakan & Bantuan
                 </h2>
