@@ -110,7 +110,7 @@ export function AuthPage({ mode }: { mode: 'login' | 'register' | 'forgot' }) {
     setError('')
     setGoogleBusy(true)
     try {
-      if (!isSupabaseConfigured && isSandboxEnabled()) {
+      if (isSandboxEnabled()) {
         const targetEmail = email.trim() || 'kreator.google@luven.my.id'
         await signInWithGoogleOAuth(targetEmail)
         await refreshAuth()

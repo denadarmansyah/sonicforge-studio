@@ -1,5 +1,7 @@
 # Luven (`luven.my.id`)
 
-Aplikasi utama Vite + React + TypeScript + Tailwind CSS 4 berada di subfolder [`sonicforge-studio/`](./sonicforge-studio/).
+Repositori utama platform **Luven** (`luven.my.id`). Aplikasi web Vite + React 18 + TypeScript + Tailwind CSS 4 + Supabase + Vercel Serverless berada di dalam direktori [`sonicforge-studio/`](./sonicforge-studio/).
 
-Silakan baca panduan lengkap setup Supabase, migrasi [`002_plans_links.sql`](./sonicforge-studio/supabase/migrations/002_plans_links.sql), variabel lingkungan, dan cara menjalankan di [`sonicforge-studio/README.md`](./sonicforge-studio/README.md) serta status serah terima terbaru di [`HANDOFF.md`](./HANDOFF.md).
+- Panduan lengkap urutan SQL Supabase, pemeriksaan hasil migrasi, konfigurasi Authentication & Identity Linking, variabel lingkungan, dan cara menjalankan aplikasi: baca [`sonicforge-studio/README.md`](./sonicforge-studio/README.md).
+- Dokumen serah terima arsitektur, status fitur, dan catatan teknis terbaru: baca [`HANDOFF.md`](./HANDOFF.md) dan [`sonicforge-studio/HANDOFF.md`](./sonicforge-studio/HANDOFF.md).
+- Berkas migrasi database terbaru: [`sonicforge-studio/supabase/migrations/003_accounts_and_admin.sql`](./sonicforge-studio/supabase/migrations/003_accounts_and_admin.sql).
